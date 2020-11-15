@@ -1,0 +1,57 @@
+DATASET:
+  num_class: 1
+  root: "PATH/TO/GENERATED_TRAINING_DATA"
+  raw_img_root: "PATH/TO/RAW_IMGS"
+  raw_img_folder: "img_left"
+  train_set: "train_airsim_city"
+  validation_set: "valid_airsim_city"
+  test_set: "test_airsim_city"
+  use_color_images: True
+  is_dataset_color: True
+  session_prefix_len: 5
+  normalize_input: True
+  img_width: 512
+  img_height: 512
+  target_downsampling_rate: 8
+
+MODEL:
+  is_regression_mode : True
+  name: "iv_airsim_citywb_mobilenet_c1deepsup_exp2AV3_reg_msk"
+  arch_encoder: "mobilenetv2dilated"
+  arch_decoder: "c1_deepsup"
+  fc_dim: 320
+
+TRAIN:
+  use_gpu : True
+  batch_size_per_gpu: 5
+  batch_size: 5
+  workers : 2
+  num_epoch: 200
+  start_epoch: 0
+  snapshot_interval : 5
+
+  optim: "SGD"
+  lr_encoder: 0.02
+  lr_decoder: 0.02
+  lr_pow: 0.9
+  beta1: 0.9
+  weight_decay: 1e-4
+  deep_sup_scale: 0.4
+  fix_bn: False
+  use_masked_loss: True
+
+
+TEST:
+  ground_truth_available : False
+  save_raw_output: True
+  output_img_width : 960
+  output_img_height : 600
+  test_model_encoder : "PATH/TO/TRAINED_NETWORK_ENCODER"
+  test_model_decoder : "PATH/TO/TRAINED_NETWORK_DECODER"
+  use_gpu : True
+  batch_size_per_gpu : 10
+  batch_size: 5
+  workers: 2
+  result: "OUTPUT_PATH/TO/SAVE/NETWORK_RESULTS"
+
+DIR: "OUTPUT_PATH/TO/SAVE/TRAINED_MODEL"

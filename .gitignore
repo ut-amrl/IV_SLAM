@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+
+introspection_function/data_loader/__pycache__/
+introspection_function/networks/__pycache__/
+introspection_function/config/__pycache__/
+introspection_function/.idea/
+introspection_function/training/run_scripts/pretrained/
+introspection_function/lib/nn/__pycache__/
+introspection_function/lib/nn/modules/__pycache__/
+introspection_function/lib/utils/__pycache__/
+introspection_function/networks/models/__pycache__/
+introspection_function/networks/models_light/__pycache__/
