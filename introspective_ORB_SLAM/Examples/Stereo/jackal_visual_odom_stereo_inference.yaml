@@ -1,0 +1,159 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV) 
+Camera.fx: 528.955512
+Camera.fy: 528.955512
+Camera.cx: 479.748173
+Camera.cy: 298.607571
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: 960
+Camera.height: 600
+
+# Camera frames per second 
+Camera.fps: 10.0
+
+# stereo baseline (in meters) times fx (in pixels)
+# baseline is the first element of the translation matrix T in amrl_jackal_webcam_stereo.yml
+# fx in pixels is the first element in the LEFT.K matrix in this setting file
+Camera.bf: 69.690815
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.
+ThDepth: 35
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+LEFT.height: 600
+LEFT.width: 960
+LEFT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [0, 0, 0, 0, 0] 
+   #data: [-0.153137, 0.075666, -0.000227, -0.000320, 0.000000]
+LEFT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [527.873518, 0.000000, 482.823413, 0.000000, 527.276819, 298.033945, 0.000000, 0.000000, 1.000000]
+LEFT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [0.999940, -0.003244, -0.010471, 0.003318, 0.999970, 0.007064, 0.010448, -0.007098, 0.999920]
+LEFT.P:  !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [528.955512, 0.000000, 479.748173, 0.000000, 0.000000, 528.955512, 298.607571, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]
+   
+RIGHT.height: 600
+RIGHT.width: 960
+RIGHT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [0, 0, 0, 0, 0]
+   #data: [-0.156833, 0.081841, -0.000779, -0.000356, 0.000000]
+RIGHT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [530.158021, 0.000000, 475.540633, 0.000000, 529.682234, 299.995465, 0.000000, 0.000000, 1.000000]
+RIGHT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [0.999661, -0.024534, 0.008699, 0.024595, 0.999673, -0.006974, -0.008525, 0.007186, 0.999938]
+RIGHT.P:  !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [528.955512, 0.000000, 479.748173, -69.690815, 0.000000, 528.955512, 298.607571, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 2000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid    
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid   
+ORBextractor.nLevels: 8
+
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast        
+ORBextractor.iniThFAST: 12
+ORBextractor.minThFAST: 7
+
+
+# If set to true, non-uniform distribution of features is applied across
+# the image when feature quality heatmaps are provided
+ORBextractor.enableIntrospection: 1
+
+#-------------------------------------------------------------------------
+# ORB Matcher Parameters
+#-------------------------------------------------------------------------
+ORBMatcher.NNRatioMultiplier: 0.95
+ORBMatcher.SearchWindowMultiplier: 1.2
+
+#-------------------------------------------------------------------------
+# Introspective Model Training Parameters
+#-------------------------------------------------------------------------
+# If set to true, training data for the introspeciton model (the heatmaps)
+# are generated in an unsupervised manner and reference camera poses are only
+# used for evaluating the reliability of ORB-SLAM's output
+IVSLAM.unsupervisedLearning: 0
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+
+## Visibility Enhanced Mode
+#Viewer.KeyFrameSize: 0.05
+#Viewer.KeyFrameLineWidth: 3
+#Viewer.GraphLineWidth: 3.0
+#Viewer.PointSize:6
+#Viewer.CameraSize: 0.08
+#Viewer.CameraLineWidth: 5
+#Viewer.ViewpointX: 0
+#Viewer.ViewpointY: -0.7
+#Viewer.ViewpointZ: -1.8
+#Viewer.ViewpointF: 350 # 500
+
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize:4
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8 # topView:-0.3
+Viewer.ViewpointF: 250 # 500 topView: 50
+
+# If set to 1, frame drawings will happen in headless mode. Useful if you want
+# to save visualizations to file. If you want to completely turn off the 
+# viewer, you should turn it off when instantiating the SLAM object.
+Viewer.HeadlessMode: 0
+Viewer.SaveFramesToFile: 0
+Viewer.SaveMapDrawingsToFile: 0

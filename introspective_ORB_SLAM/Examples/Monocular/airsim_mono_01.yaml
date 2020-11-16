@@ -1,0 +1,122 @@
+%YAML:1.0
+
+#-------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#-------------------------------------------------------------------------------
+
+
+# Camera calibration and distortion parameters (OpenCV) 
+Camera.fx: 480.0
+Camera.fy: 480.0
+Camera.cx: 480.0
+Camera.cy: 300.0
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+
+Camera.width: 960
+Camera.height: 600
+
+# Camera frames per second 
+Camera.fps: 30.0
+
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are 
+#grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.
+ThDepth: 80
+
+#-------------------------------------------------------------------------------
+# ORB Parameters
+#-------------------------------------------------------------------------------
+
+
+# ORB Extractor: Number of features per image
+#ORBextractor.nFeatures: 1200
+ORBextractor.nFeatures: 2000
+#ORBextractor.nFeatures: 5000
+#ORBextractor.nFeatures: 10000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid    
+ORBextractor.scaleFactor: 1.2
+#ORBextractor.scaleFactor: 1.1
+# ORBextractor.scaleFactor: 1.05
+#ORBextractor.scaleFactor: 1.04
+
+# ORB Extractor: Number of levels in the scale pyramid   
+ORBextractor.nLevels: 8
+#ORBextractor.nLevels: 20
+# ORBextractor.nLevels: 30
+#ORBextractor.nLevels: 50
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum 
+#response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower 
+# value minThFAST
+# You can lower these values if your images have low contrast        
+#ORBextractor.iniThFAST: 20
+# ORBextractor.iniThFAST: 15
+#ORBextractor.iniThFAST: 20
+#ORBextractor.minThFAST: 7
+#ORBextractor.minThFAST: 2
+#ORBextractor.minThFAST: 1
+
+# Allos Low Contrast Corners
+ORBextractor.iniThFAST: 50
+ORBextractor.minThFAST: 7
+
+# High Contrast Corners Only
+#ORBextractor.iniThFAST: 150
+#ORBextractor.minThFAST: 30
+
+# If set to true, non-uniform distribution of features is applied across
+# the image when feature quality heatmaps are provided
+ORBextractor.enableIntrospection: 1
+
+#-------------------------------------------------------------------------
+# ORB Matcher Parameters
+#-------------------------------------------------------------------------
+#ORBMatcher.NNRatioMultiplier: 0.5
+#ORBMatcher.SearchWindowMultiplier: 10.0
+ORBMatcher.NNRatioMultiplier: 1.0
+ORBMatcher.SearchWindowMultiplier: 1.0
+
+#-------------------------------------------------------------------------
+# Introspective Model Training Parameters
+#-------------------------------------------------------------------------
+# If set to true, training data for the introspeciton model (the heatmaps)
+# are generated in an unsupervised manner and reference camera poses are only
+# used for evaluating the reliability of ORB-SLAM's output
+IVSLAM.unsupervisedLearning: 0
+
+
+#-------------------------------------------------------------------------------
+# Viewer Parameters
+#-------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize:2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+
+
+# If set to 1, frame drawings will happen in headless mode. Useful if you want
+# to save visualizations to file. If you want to completely turn off the 
+# viewer, you should turn it off when instantiating the SLAM object.
+Viewer.HeadlessMode: 0
+Viewer.SaveFramesToFile: 0
+Viewer.SaveMapDrawingsToFile: 0
+
+
+
