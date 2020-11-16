@@ -1,11 +1,11 @@
 DATASET:
   num_class: 1
-  root: "PATH/TO/GENERATED_TRAINING_DATA"
-  raw_img_root: "PATH/TO/RAW_IMGS"
+  root: "../../../introspective_ORB_SLAM/scripts/generated_training_data/"
+  raw_img_root: "../../../Jackal_Visual_Odom"
   raw_img_folder: "image_0"
-  train_set: "TRAIN_SET_NAME"
-  validation_set: "VALIDATION_SET_NAME"
-  test_set: "TEST_SET_NAME"
+  train_set: "train_jackal_0"
+  validation_set: "valid_jackal_0"
+  test_set: "test_jackal_0"
   use_color_images: False
   is_dataset_color: False
   session_prefix_len: 5
@@ -48,12 +48,12 @@ TEST:
   save_raw_output: True
   output_img_width : 960
   output_img_height : 600
-  test_model_encoder : "PATH/TO/TRAINED_NETWORK_ENCODER"
-  test_model_decoder : "PATH/TO/TRAINED_NETWORK_DECODER"
+  test_model_encoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_decoder_last_model_0030.pth"
+  test_model_decoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_encoder_last_model_0030.pth"
   use_gpu : True
   batch_size_per_gpu : 50
   batch_size: 5
   workers: 2
-  result: "OUTPUT_PATH/TO/SAVE/NETWORK_RESULTS"
+  result: ""
 
-DIR: "OUTPUT_PATH/TO/SAVE/TRAINED_MODEL"
+DIR: "../../pretrained"

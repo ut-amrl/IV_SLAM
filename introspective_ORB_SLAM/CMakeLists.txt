@@ -95,7 +95,6 @@ glog
 gflags
 boost_system -lboost_filesystem
 -ljsoncpp
-ceres
 "${TORCH_LIBRARIES}"
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
