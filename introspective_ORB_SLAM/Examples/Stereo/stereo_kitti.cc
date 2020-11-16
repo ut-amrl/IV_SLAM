@@ -156,6 +156,9 @@ bool GetImageQualFileNames(const std::string &directory,
                            vector<string> *vstrImageQualFilenames,
                            int * num_qual_imgs_found);
 
+int GetSmallestImgIdx(const std::string &directory,
+                       const int &prefix_length);
+
 void SignalHandler( int signal_num ) { 
    cout << "Interrupt signal is (" << signal_num << ").\n"; 
   
@@ -370,7 +373,6 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = 
                         std::chrono::monotonic_clock::now();
 #endif
-      
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_COLOR);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_COLOR);
@@ -580,10 +582,11 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
     vstrImageLeft.resize(nTimes);
     vstrImageRight.resize(nTimes);
 
-    for(int i=0; i<nTimes; i++)
+    int smallest_img_idx = GetSmallestImgIdx(strPrefixLeft, 6);
+    for(int i=smallest_img_idx; i<nTimes; i++)
     {
         stringstream ss;
-        ss << setfill('0') << setw(6) << i;
+        ss << setfill('0') << setw(6) << i + smallest_img_idx;
         vstrImageLeft[i] = strPrefixLeft + ss.str() + ".png";
         vstrImageRight[i] = strPrefixRight + ss.str() + ".png";
     }
@@ -619,10 +622,11 @@ void LoadImagesWithQual(const string &strPathToSequence,
     vstrImageLeft.resize(nTimes);
     vstrImageRight.resize(nTimes);
 
-    for(int i=0; i<nTimes; i++)
+    int smallest_img_idx = GetSmallestImgIdx(strPrefixLeft, 6);
+    for(int i=smallest_img_idx; i<nTimes; i++)
     {
         stringstream ss;
-        ss << setfill('0') << setw(6) << i;
+        ss << setfill('0') << setw(6) << i + smallest_img_idx;
         vstrImageLeft[i] = strPrefixLeft + ss.str() + ".png";
         vstrImageRight[i] = strPrefixRight + ss.str() + ".png";
     }
@@ -684,11 +688,12 @@ void LoadImagesWithGT(const string &strPathToSequence,
     const int nTimes = vTimestamps.size();
     vstrImageLeft.resize(nTimes);
     vstrImageRight.resize(nTimes);
-
+    
+    int smallest_img_idx = GetSmallestImgIdx(strPrefixLeft, 6);
     for(int i=0; i<nTimes; i++)
     {
         stringstream ss;
-        ss << setfill('0') << setw(6) << i;
+        ss << setfill('0') << setw(6) << i + smallest_img_idx;
         vstrImageLeft[i] = strPrefixLeft + ss.str() + ".png";
         vstrImageRight[i] = strPrefixRight + ss.str() + ".png";
     }
@@ -806,4 +811,34 @@ bool GetImageQualFileNames(const std::string &directory,
   (void)closedir(dirp);
   
   return true;
+}
+
+int GetSmallestImgIdx(const std::string &directory,
+                       const int &prefix_length) {
+  char numbering[20];
+  
+  DIR* dirp = opendir(directory.c_str());
+  struct dirent * dp;
+  
+  if(!dirp) {
+    LOG(ERROR) << "Could not open directory " << directory;
+  }
+
+  int smallest_idx = std::numeric_limits<int>::max();
+  while ((dp = readdir(dirp)) != NULL){
+    // Ignore the '.' and ".." directories
+    if(!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) continue;
+    for(int i = 0; i < prefix_length ; i++){
+        numbering[i] = dp->d_name[i];
+    }
+   
+    int prefix_number = atoi(numbering);
+
+    if (prefix_number < smallest_idx) {
+      smallest_idx = prefix_number;
+    }
+  }
+  (void)closedir(dirp);
+  
+  return smallest_idx;
 }

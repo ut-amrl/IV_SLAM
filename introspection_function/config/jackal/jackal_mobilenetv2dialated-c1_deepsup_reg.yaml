@@ -1,11 +1,11 @@
 DATASET:
   num_class: 1
   root: "../../../introspective_ORB_SLAM/scripts/generated_training_data/"
-  raw_img_root: "../../../Jackal_Visual_Odom"
+  raw_img_root: "../../../Jackal_Visual_Odom/sequences"
   raw_img_folder: "image_0"
-  train_set: "train_jackal_0"
-  validation_set: "valid_jackal_0"
-  test_set: "test_jackal_0"
+  train_set: "train_jackal_t"
+  validation_set: "valid_jackal_t"
+  test_set: "test_jackal_t"
   use_color_images: False
   is_dataset_color: False
   session_prefix_len: 5

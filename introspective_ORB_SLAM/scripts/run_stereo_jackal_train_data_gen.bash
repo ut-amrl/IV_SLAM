@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SESSIONS="1 2 3 4 8 10 13 16 17 20 22 25 27 28 31 36 42"
+# SESSIONS="1 2 3 4 8 10 13 16 17 20 22 25 27 28 31 36 42"
+SESSIONS="37"
 START_FRAME="0" 
 CONFIG_FILE_NAME="jackal_visual_odom_stereo_training.yaml"
 
@@ -36,10 +37,8 @@ TARGET_DATASET_BASE_DIR="generated_training_data/"
 
 PREDICTED_IMAGE_QUAL_BASE_DIR=""
 
-
 mkdir -p $TARGET_RESULT_BASE_DIR
-mkdir -p $generated_training_data
-
+mkdir -p $TARGET_DATASET_BASE_DIR
 
 
 SEQUENCE_PATH=$SOURCE_DATASET_BASE_DIR/"sequences"

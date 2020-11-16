@@ -24,7 +24,7 @@ OPTIMIZER_POSE_OPT_ITER_COUNT="4" # def: 4
 TRACKING_BA_RATE="1" # def: 1
 MAP_DRAWER_VISUALIZE_GT_POSE="true"
 
-SAVE_VISUALIZATIONS="false"
+SAVE_VISUALIZATIONS="true"
 IVSLAM_ENABLED="true"
 LOAD_REL_POSE_UNCERTAINTY="false"
 
@@ -33,7 +33,7 @@ SOURCE_DATASET_BASE_DIR=\
 "../../Jackal_Visual_Odom/"
 
 INTROSPECTION_MODEL_PATH=\
-"../../training/introspection_function/pretrained/iv_jackal_mobilenet_c1deepsup_light.pt"
+"../../introspection_function/pretrained/iv_jackal_mobilenet_c1deepsup_light.pt"
 
 TARGET_RESULT_BASE_DIR="results/"
 
