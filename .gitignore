@@ -73,3 +73,5 @@ introspective_ORB_SLAM/KeyFrameTrajectory_TUM_Format.txt
 introspective_ORB_SLAM/build/
 introspective_ORB_SLAM/lib/
 *~
+
+/introspective_ORB_SLAM/Thirdparty/libtorch
