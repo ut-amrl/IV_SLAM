@@ -26,8 +26,8 @@
 #include <memory>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include<opencv2/core/core.hpp>
-#include <opencv/cv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #if (CV_VERSION_MAJOR >= 4)
   #include<opencv2/imgcodecs/legacy/constants_c.h>
 #endif
