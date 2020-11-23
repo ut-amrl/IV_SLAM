@@ -10,15 +10,17 @@ This is an implementation of IV-SLAM for [ORB-SLAM2](https://github.com/raulmur/
 4. [gflags](https://github.com/gflags/gflags)
 5. Eigen3
 6. [JsonCpp](https://github.com/open-source-parsers/jsoncpp)
+7. CUDA($\geq$ 10.2) and cuDNN ($\geq$ 7.6.5)
 
 Download and install Pangolin from [here](https://github.com/stevenlovegrove/Pangolin). 
 You can install the rest of the dependencies on ubuntu using:
 ```
-sudo apt-get install libgoogle-glog-dev libgflags-dev libjsoncpp-dev libeigen3-dev
+sudo apt-get install libgoogle-glog-dev libgflags-dev libjsoncpp-dev libeigen3-dev nvidia-cuda-toolkit
 ```
 
 ## Build
 ```
+./install_dependencies.bash
 cd introspective_ORB_SLAM
 ./build.sh
 ```
