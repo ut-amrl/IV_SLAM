@@ -63,12 +63,13 @@ When run in training mode, IV-SLAM evaluates extracted image features and genera
 the labelled data required for training the introspection function. Run IV-SLAM in training mode using the following script: 
 ```
 cd introspective_ORB_SLAM/scripts
-./run_stereo_jackal_batch_training.bash
+./run_stereo_jackal_train_data_gen.bash
 ```
 
 ## Training
 Once labelled training data is generated, the introspection function, implemented as a fully convolutional network, can be trained using the following command:
 ```
+conda activate ivslam-env
 cd introspection_function/training/run_scripts
 ./exec_train_modular_jackal.bash
 ```
@@ -77,6 +78,7 @@ The path to the training data and the model architecture are provided in a confi
 
 In order to use the trained PyTorch model during inference, you should first export it to Torch Script using the following script:
 ```
+conda activate ivslam-env
 cd introspection_function/training/run_scripts
 ./exec_export_model_light.bash
 ```

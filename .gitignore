@@ -31,6 +31,13 @@
 *.out
 *.app
 
+# Media/Models
+*.pth
+*.png
+*.jpg
+
+# Thirdparty
+*.zip
 
 introspection_function/data_loader/__pycache__/
 introspection_function/networks/__pycache__/
@@ -42,6 +49,9 @@ introspection_function/lib/nn/modules/__pycache__/
 introspection_function/lib/utils/__pycache__/
 introspection_function/networks/models/__pycache__/
 introspection_function/networks/models_light/__pycache__/
+introspection_function/training/
+introspection_function/pretrained/
+
 
 
 
@@ -72,6 +82,8 @@ introspective_ORB_SLAM/FrameTrajectory_TUM_Format.txt
 introspective_ORB_SLAM/KeyFrameTrajectory_TUM_Format.txt
 introspective_ORB_SLAM/build/
 introspective_ORB_SLAM/lib/
+introspective_ORB_SLAM/scripts/
+introspective_ORB_SLAM/Thirdparty/libtorch
 *~
 
-/introspective_ORB_SLAM/Thirdparty/libtorch
+Jackal_Visual_Odom/
