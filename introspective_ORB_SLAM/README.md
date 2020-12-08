@@ -1,0 +1,10 @@
+# Adaptation of ORB_SLAM for Introspective Vision
+
+## Include/Source
+The following include/source files have been added to the default ORB_SLAM implementation:
+
+1. dataset_creator.h/.cpp
+2. feature_evaluator.h/.cpp
+3. io_access.h/.cpp
+4. torch_helpers.h/.cpp
+
