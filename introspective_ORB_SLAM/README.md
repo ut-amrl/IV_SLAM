@@ -8,3 +8,7 @@ The following include/source files have been added to the default ORB_SLAM imple
 3. io_access.h/.cpp
 4. torch_helpers.h/.cpp
 
+The following include/source files have been edited in the default ORB_SLAM implementation:
+
+1. Tracking.cc
+2. Examples/Stereo/stereo_kitti.cc
