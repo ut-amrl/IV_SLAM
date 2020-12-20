@@ -21,32 +21,32 @@
 #ifndef iSLAM_TORCH_HELPERS
 #define iSLAM_TORCH_HELPERS
 
-#include <vector>
-#include <algorithm>
-#include <memory>
-#include <torch/script.h>
 #include <torch/torch.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+
 #if (CV_VERSION_MAJOR >= 4)
   #include<opencv2/imgcodecs/legacy/constants_c.h>
 #endif
 
-namespace ORB_SLAM2 {
+#include <string>
 
-std::string GetImageType(const cv::Mat& img, bool more_info=true);
+namespace ORB_SLAM2 
+{
 
-void ShowImage(cv::Mat img, std::string title);
-at::Tensor TransposeTensor(at::Tensor & tensor, 
-                    c10::IntArrayRef dims = { 0, 3, 1, 2 });
+std::string GetImageType( const cv::Mat& img, bool more_info = true );
 
-at::Tensor CVImgToTensor(cv::Mat & img, 
-                  bool unsqueeze=false,
-                  int unsqueeze_dim = 0);
+void ShowImage( cv::Mat img, std::string title );
 
-cv::Mat ToCvImage(at::Tensor & tensor);
+at::Tensor TransposeTensor( at::Tensor & tensor, 
+                            c10::IntArrayRef dims = { 0, 3, 1, 2 } );
 
+at::Tensor CVImgToTensor( cv::Mat & img, 
+                          bool unsqueeze = false,
+                          int unsqueeze_dim = 0 );
+
+cv::Mat ToCvImage( at::Tensor & tensor );
 
 } // namespace ORB_SLAM2
 
-#endif // iSLAM_IO_ACCESS
+#endif // iSLAM_TORCH_HELPERS

@@ -21,44 +21,48 @@
 
 namespace ORB_SLAM2 {
 
-using std::vector;
 using std::string;
-using std::cout;
-using std::endl;
 
-void RemoveDirectory(const string& path) {
-  boost::filesystem::path dir(path.c_str());
+void RemoveDirectory( const string& path ) 
+{
+  boost::filesystem::path dir( path.c_str() );
   boost::filesystem::remove_all(dir);
 }
 
-bool CreateDirectory(const string& path) {
-  boost::filesystem::path dir(path.c_str());
+bool CreateDirectory( const string& path ) 
+{
+  boost::filesystem::path dir( path.c_str() );
 
-  if(!(boost::filesystem::exists(dir))) {
-    if (!boost::filesystem::create_directory(dir)){
+  if( !(boost::filesystem::exists(dir)) ) 
+  {
+    if( !boost::filesystem::create_directory(dir) )
+    {
       return false;
     }
   }
+
   return true;
 }
 
-bool WriteJsonToFile(const string& path,
-                     const string& file_name,
-                     const Json::Value& json_obj) {
-  if(!CreateDirectory(path)) {
+bool WriteJsonToFile( const string& path,
+                      const string& file_name,
+                      const Json::Value& json_obj ) 
+{
+  if( !CreateDirectory(path) ) 
+  {
     return false;
   }
 
   std::ofstream file_out;
-  file_out.open ((path + file_name).c_str(),
-                            std::ios::out | std::ios::trunc);
+  file_out.open( (path + file_name).c_str(),
+                 std::ios::out | std::ios::trunc );
   file_out << json_obj;
   file_out.close();
+   
   return true;
 }
 
-PFM::PFM() {
-}
+PFM::PFM() {} 
 
 } // namespace ORB_SLAM2
 

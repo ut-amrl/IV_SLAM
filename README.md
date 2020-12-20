@@ -66,6 +66,28 @@ cd introspective_ORB_SLAM/scripts
 ./run_stereo_jackal_train_data_gen.bash
 ```
 
+### Run Default ORB-SLAM Implementation
+The implementation of IV_SLAM is closely linked to ORB_SLAM because of the need for book keeping required for image features and map points. In order to run default ORB-SLAM in the IV-SLAM package you should use the provided configuration scripts and not the tutorials found in [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2). 
+
+The provided example script run_stereo_jackal_batch_inference.bash found in introspective_ORB_SLAM/scripts should be edited to have the following lines in order to run basic ORB-SLAM for inference,
+```
+CREATE_IVSLAM_DATASET="false"
+INFERENCE_MODE="true"
+INTROSPECTION_FUNCTION_ENABLED="false"
+MAP_DRAWER_VISUALIZE_GT_POSE="false"
+```
+
+In the YAML file jackal_visual_odom_stereo_inference.yaml make sure it contains the following lines,
+```
+IVSLAM.unsupervisedLearning: 0
+ORBextractor.enableIntrospection: 0
+
+Viewer.HeadlessMode: 0
+Viewer.SaveFramesToFile: 0
+Viewer.SaveMapDrawingsToFile: 0
+
+```
+
 ## Training
 Once labelled training data is generated, the introspection function, implemented as a fully convolutional network, can be trained using the following command:
 ```

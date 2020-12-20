@@ -19,50 +19,37 @@
 #ifndef iSLAM_DATASET_CREATOR
 #define iSLAM_DATASET_CREATOR
 
-#include <vector>
-#include <algorithm>
-#include <glog/logging.h>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <glog/logging.h>
-
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <sys/stat.h>
-#include <dirent.h>
+#include <opencv2/opencv.hpp>
 #include <jsoncpp/json/json.h>
+#include <Eigen/Core>
 
-#include "opencv2/video/tracking.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/features2d.hpp"
-// #include "opencv2/xfeatures2d.hpp"
-
-#include "io_access.h"
-
+#include <vector>
+#include <string>
 
 namespace feature_evaluation {
 
 class DatasetCreator{
 public:
-  DatasetCreator(const std::string& dataset_path);
+  DatasetCreator( const std::string& dataset_path );
+
   ~DatasetCreator() = default;
 
   void SaveToFile();
-  void AppendKeypoints(std::vector<cv::KeyPoint> keypoints,
-                       std::vector<float> epipolar_err);
-  void AppendDescriptors(cv::Mat descriptors,
-                         cv::Mat descriptors2,
-                        std::string& img_name);
-  void SaveBadRegionHeatmap(const std::string& img_name,
-                            const cv::Mat& bad_region_heatmap);
-  void SaveBadRegionHeatmapMask(const std::string& img_name,
-                                const cv::Mat& bad_region_heatmap_mask);
-  
+
+  void AppendKeypoints( std::vector<cv::KeyPoint> keypoints,
+                        std::vector<float> epipolar_err );
+
+  void AppendDescriptors( cv::Mat descriptors,
+                          cv::Mat descriptors2,
+                          std::string& img_name );
+
+  void SaveBadRegionHeatmap( const std::string& img_name,
+                             const cv::Mat& bad_region_heatmap ); 
+
+  void SaveBadRegionHeatmapMask( const std::string& img_name,
+                                 const cv::Mat& bad_region_heatmap_mask );
+                                 
+  // TODO - why no getters and setters?
 private:
   const std::string keypoints_file_name_ = "keypoints.json";
   const std::string descriptors_file_name_ = "descriptors.csv";
@@ -75,10 +62,9 @@ private:
   std::vector<Eigen::VectorXd> descriptors_;
   long unsigned int descriptor_counter_ = 0;
   long unsigned int keypt_counter_ = 0;
-  
- 
 
 };
+
 } // namespace feature_evaluation
 
 #endif // iSLAM_DATASET_CREATOR
