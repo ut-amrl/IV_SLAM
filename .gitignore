@@ -84,6 +84,7 @@ introspective_ORB_SLAM/build/
 introspective_ORB_SLAM/lib/
 introspective_ORB_SLAM/scripts/
 introspective_ORB_SLAM/Thirdparty/libtorch
+introspective_ORB_SLAM/results
 *~
 
 Jackal_Visual_Odom/
