@@ -2,6 +2,10 @@
 Introspective Vision for Simultaneous Localization and Mapping. 
 This is an implementation of IV-SLAM for [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2). 
 
+<a href="https://www.youtube.com/embed/89z3Bn7qTa4" target="_blank"><img src="http://img.youtube.com/vi/89z3Bn7qTa4/0.jpg" 
+alt="IV-SLAM" width="240" height="180" border="10" /></a>
+
+
 ## Dependencies
 
 1. [Pangolin](https://github.com/stevenlovegrove/Pangolin) 
