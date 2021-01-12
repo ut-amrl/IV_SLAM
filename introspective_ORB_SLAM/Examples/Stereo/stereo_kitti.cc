@@ -306,8 +306,8 @@ int main(int argc, char **argv) {
                                 M1r,
                                 M2r);
   } else if (FLAGS_rectify_images) {
-    D_l = cv::Mat::eye(1, 4, CV_32F);
-    D_r = cv::Mat::eye(1, 4, CV_32F);
+    D_l = cv::Mat::zeros(1, 4, CV_32F);
+    D_r = cv::Mat::zeros(1, 4, CV_32F);
 
     cv::initUndistortRectifyMap(K_l,
                                 D_l,
