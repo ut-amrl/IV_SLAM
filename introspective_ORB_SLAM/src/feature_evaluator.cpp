@@ -274,7 +274,7 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
   if (!file.isOpened()) {
     LOG(FATAL) << "ERROR: Wrong path to calibration file: " << calib_file;
   }
-
+  // TODO: Find a way to align this with the output of the stereo calibration format
   cv::Mat K_l, P_l, R_l, D_l;
   file["LEFT.K"] >> K_l;
   file["LEFT.P"] >> P_l;
@@ -1102,10 +1102,10 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
   bool reproj_err_available = DrawReprojectionErrVec();
   bool epipolar_err_available = DrawEpipolarErrVec(was_recently_reset);
 
-  //   cv::imwrite(feature_qual_path, img_feature_qual_annotation_);
-  //   cv::imwrite(feature_matching_path, img_matching_annotation_);
-  //   cv::imwrite(bad_matched_features_path, img_bad_matching_annotation_);
-  //   cv::imwrite(bad_region_heatmap_path, bad_region_heatmap_);
+  // cv::imwrite(feature_qual_path, img_feature_qual_annotation_);
+  // cv::imwrite(feature_matching_path, img_matching_annotation_);
+  // cv::imwrite(bad_matched_features_path, img_bad_matching_annotation_);
+  // cv::imwrite(bad_region_heatmap_path, bad_region_heatmap_);
 
   if (kSaveColoredHeatmaps || kSaveColoredMaskedHeatmaps) {
     Scalar flag_color;

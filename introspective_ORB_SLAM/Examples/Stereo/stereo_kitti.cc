@@ -78,7 +78,7 @@ DEFINE_string(rel_pose_uncertainty_path,
 DEFINE_int32(start_frame, 0, "Start frame ID.");
 DEFINE_int32(end_frame, -1, "End frame ID.");
 
-// If set to ture, the estimated camera pose uncertainty values are loaded
+// If set to true, the estimated camera pose uncertainty values are loaded
 // and passed to IV-SLAM
 DEFINE_bool(load_rel_pose_uncertainty,
             false,
