@@ -716,7 +716,7 @@ void Tracking::Track() {
         }
       }
 
-      if (mbSaveVisualizationsToFile) {
+      if (iLoggingLevel >= 1) {
         mFeatureEvaluator->SaveImagesToFile(mvSaveVisualizationPath,
                                             mCurrentFrame.mstrLeftImgName,
                                             mpMap->KeyFramesInMap() <= 15);
@@ -2446,7 +2446,7 @@ void Tracking::SaveTrackingResults(bool saving_on_failure) {
   string suffix = ss_suffix.str();
   string path_to_traj, path_to_traj_kitti, path_to_ts_kitti;
   string path_to_failure_log;
-  if (mbSaveVisualizationsToFile) {
+  if (iLoggingLevel >= 1) {
     string dir = mvSaveVisualizationPath + "/trajectory/";
     path_to_traj = dir + "KeyFrameTrajectory_TUM_" + suffix + ".txt";
     path_to_failure_log = mvSaveVisualizationPath + "/failure_log.txt";

@@ -35,7 +35,7 @@ System::System(const string &strVocFile,
                const bool bUseViewer,
                const bool bTrainIntrospectionModel,
                const bool bEnableIntrospection,
-               const bool bSaveVisualizationsToFile,
+               const bool iLoggingLevel,
                const bool bCreateIntrospectionDataset,
                const bool bSingleThreaded,
                const bool bUseBoW,
@@ -149,7 +149,7 @@ System::System(const string &strVocFile,
 
   mpTracker->mbIntrospectionOn = bEnableIntrospection;
   mpTracker->mbTrainingMode = bTrainIntrospectionModel;
-  mpTracker->mbSaveVisualizationsToFile = bSaveVisualizationsToFile;
+  mpTracker->iLoggingLevel = iLoggingLevel;
   mpTracker->mbCreateIntrospectionDataset = bCreateIntrospectionDataset;
   mpTracker->mvSaveVisualizationPath = strSaveVisualizationPath;
   mpTracker->mvOutputIntrospectionDatasetPath =
