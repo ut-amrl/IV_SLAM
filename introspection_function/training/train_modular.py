@@ -138,13 +138,15 @@ def main(cfg, args, gpus):
                            4023, 4025, 4027, 4028, 4029, 4031, 4033, 4035],
     "train_jackal_0": [
           1, 2, 3, 4, 8, 10, 13, 16, 17, 20, 22, 25, 27, 28, 31, 36, 42],
-    "train_jackal_t": [37]
+    "train_jackal_t": [37],
+    "train_stereo_2020_12_21_run1_t": [1]
     }
 
   valid_set_dict = {
     "valid_airsim_city_0": [1008, 1016, 1017, 1024],
     "valid_jackal_0": [14],
     "valid_jackal_t": [37],
+    "valid_stereo_2020_12_21_run1_t": [1],
   }
 
 
