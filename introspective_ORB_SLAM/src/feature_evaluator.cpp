@@ -284,14 +284,21 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
   int rows_l = file["LEFT.height"];
   int cols_l = file["LEFT.width"];
 
-  if (K_l.empty() || P_l.empty() || R_l.empty() || D_l.empty() || rows_l == 0 || cols_l == 0) {
-    LOG(WARNING) << "Required parameters for image undistortion/rectification were not "
+  if (K_l.empty() || P_l.empty() || R_l.empty() || rows_l == 0 || cols_l == 0) {
+    LOG(WARNING) << "Required parameters for image rectification were not "
                  << "found in the calibration file. Generated training "
                  << "heatmaps will not be unrectified.";
     rectification_map_available_ = false;
     return;
   }
 
+  // The unrectification is currently only supported for undistorted images
+  if (!D_l.empty()) {
+    if (cv::countNonZero(D_l) > 0) {
+      LOG(FATAL) << "Heatmap unrectification is not currently supported for "
+                 << "distorted images.";
+    }
+  }
 
   cv::Mat R_l_inv;
   cv::transpose(R_l, R_l_inv);
@@ -1053,18 +1060,22 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
     RemoveDirectory(target_path + "/feature_qual/");
     RemoveDirectory(target_path + "/feature_matching/");
     RemoveDirectory(target_path + "/bad_matched_features/");
+    RemoveDirectory(target_path + "/bad_region_heatmap/");
     RemoveDirectory(target_path + "/bad_region_heatmap_vis/");
     RemoveDirectory(target_path + "/bad_region_heatmap_masked_vis/");
     RemoveDirectory(target_path + "/reprojection_err_vec/");
     RemoveDirectory(target_path + "/epipolar_err_vec/");
+    RemoveDirectory(target_path + "/err_norm_factor/");
     CreateDirectory(target_path);
     CreateDirectory(target_path + "/feature_qual/");
     CreateDirectory(target_path + "/feature_matching/");
     CreateDirectory(target_path + "/bad_matched_features/");
+    CreateDirectory(target_path + "/bad_region_heatmap/");
     CreateDirectory(target_path + "/bad_region_heatmap_vis/");
     CreateDirectory(target_path + "/bad_region_heatmap_masked_vis/");
     CreateDirectory(target_path + "/reprojection_err_vec/");
     CreateDirectory(target_path + "/epipolar_err_vec/");
+    CreateDirectory(target_path + "/err_norm_factor/");
   }
 
   string feature_qual_path =
@@ -1073,6 +1084,8 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
       target_path + "/feature_matching/" + img_name_truncated + ".jpg";
   string bad_matched_features_path =
       target_path + "/bad_matched_features/" + img_name_truncated + ".jpg";
+  string bad_region_heatmap_path =
+      target_path + "/bad_region_heatmap/" + img_name_truncated + ".jpg";
   string bad_region_heatmap_vis_path =
       target_path + "/bad_region_heatmap_vis/" + img_name_truncated + ".jpg";
   string bad_region_heatmap_masked_vis_path =
@@ -1082,6 +1095,8 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
       target_path + "/reprojection_err_vec/" + img_name_truncated + ".jpg";
   string epipolar_err_vec_path =
       target_path + "/epipolar_err_vec/" + img_name_truncated + ".jpg";
+  string err_norm_factor_path =
+      target_path + "/err_norm_factor/" + img_name_truncated + ".jpg";
 
   cv::Mat tmp_img = GetFeatureErrVisualization();
   bool reproj_err_available = DrawReprojectionErrVec();
@@ -1090,6 +1105,7 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
   // cv::imwrite(feature_qual_path, img_feature_qual_annotation_);
   // cv::imwrite(feature_matching_path, img_matching_annotation_);
   // cv::imwrite(bad_matched_features_path, img_bad_matching_annotation_);
+  // cv::imwrite(bad_region_heatmap_path, bad_region_heatmap_);
 
   if (kSaveColoredHeatmaps || kSaveColoredMaskedHeatmaps) {
     Scalar flag_color;
@@ -1154,6 +1170,16 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
     }
     cv::imwrite(epipolar_err_vec_path, img_epipolar_err_vec_);
   }
+
+  // Visualize the error normalization factors if available
+  //   if (!err_norm_factor_.empty()) {
+  //     ColorKeypoints(img_err_normalization_factor_,
+  //                         keypts2_select_,
+  //                         err_norm_factor_,
+  //                         10000.0 * 0.005 * 0.064 , // 10000.0 * 0.005^2
+  //                         5.0);
+  //     cv::imwrite(err_norm_factor_path, img_err_normalization_factor_);
+  //   }
 
   first_call = false;
 }
