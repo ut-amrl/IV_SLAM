@@ -284,20 +284,12 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
   int rows_l = file["LEFT.height"];
   int cols_l = file["LEFT.width"];
 
-  if (K_l.empty() || P_l.empty() || R_l.empty() || rows_l == 0 || cols_l == 0) {
-    LOG(WARNING) << "Required parameters for image rectification were not "
+  if (K_l.empty() || P_l.empty() || R_l.empty() || D_l.empty() || rows_l == 0 || cols_l == 0) {
+    LOG(WARNING) << "Required parameters for image undistortion/rectification were not "
                  << "found in the calibration file. Generated training "
-                 << "heatmaps will not be unrectified.";
+                 << "heatmaps cannot be undistorted/rectified.";
     rectification_map_available_ = false;
     return;
-  }
-
-  // The unrectification is currently only supported for undistorted images
-  if (!D_l.empty()) {
-    if (cv::countNonZero(D_l) > 0) {
-      LOG(FATAL) << "Heatmap unrectification is not currently supported for "
-                 << "distorted images.";
-    }
   }
 
   cv::Mat R_l_inv;
@@ -311,6 +303,7 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
                               unrect_map1_left_,
                               unrect_map2_left_);
   rectification_map_available_ = true;
+  return;
 }
 
 std::vector<cv::KeyPoint> FeatureEvaluator::GetMatchedKeyPoints() {
