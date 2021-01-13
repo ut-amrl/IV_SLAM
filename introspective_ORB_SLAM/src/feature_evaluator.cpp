@@ -1060,22 +1060,18 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
     RemoveDirectory(target_path + "/feature_qual/");
     RemoveDirectory(target_path + "/feature_matching/");
     RemoveDirectory(target_path + "/bad_matched_features/");
-    RemoveDirectory(target_path + "/bad_region_heatmap/");
     RemoveDirectory(target_path + "/bad_region_heatmap_vis/");
     RemoveDirectory(target_path + "/bad_region_heatmap_masked_vis/");
     RemoveDirectory(target_path + "/reprojection_err_vec/");
     RemoveDirectory(target_path + "/epipolar_err_vec/");
-    RemoveDirectory(target_path + "/err_norm_factor/");
     CreateDirectory(target_path);
     CreateDirectory(target_path + "/feature_qual/");
     CreateDirectory(target_path + "/feature_matching/");
     CreateDirectory(target_path + "/bad_matched_features/");
-    CreateDirectory(target_path + "/bad_region_heatmap/");
     CreateDirectory(target_path + "/bad_region_heatmap_vis/");
     CreateDirectory(target_path + "/bad_region_heatmap_masked_vis/");
     CreateDirectory(target_path + "/reprojection_err_vec/");
     CreateDirectory(target_path + "/epipolar_err_vec/");
-    CreateDirectory(target_path + "/err_norm_factor/");
   }
 
   string feature_qual_path =
@@ -1084,8 +1080,6 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
       target_path + "/feature_matching/" + img_name_truncated + ".jpg";
   string bad_matched_features_path =
       target_path + "/bad_matched_features/" + img_name_truncated + ".jpg";
-  string bad_region_heatmap_path =
-      target_path + "/bad_region_heatmap/" + img_name_truncated + ".jpg";
   string bad_region_heatmap_vis_path =
       target_path + "/bad_region_heatmap_vis/" + img_name_truncated + ".jpg";
   string bad_region_heatmap_masked_vis_path =
@@ -1095,8 +1089,6 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
       target_path + "/reprojection_err_vec/" + img_name_truncated + ".jpg";
   string epipolar_err_vec_path =
       target_path + "/epipolar_err_vec/" + img_name_truncated + ".jpg";
-  string err_norm_factor_path =
-      target_path + "/err_norm_factor/" + img_name_truncated + ".jpg";
 
   cv::Mat tmp_img = GetFeatureErrVisualization();
   bool reproj_err_available = DrawReprojectionErrVec();
@@ -1105,7 +1097,6 @@ void FeatureEvaluator::SaveImagesToFile(std::string target_path,
   // cv::imwrite(feature_qual_path, img_feature_qual_annotation_);
   // cv::imwrite(feature_matching_path, img_matching_annotation_);
   // cv::imwrite(bad_matched_features_path, img_bad_matching_annotation_);
-  // cv::imwrite(bad_region_heatmap_path, bad_region_heatmap_);
 
   if (kSaveColoredHeatmaps || kSaveColoredMaskedHeatmaps) {
     Scalar flag_color;
