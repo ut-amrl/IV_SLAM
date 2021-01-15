@@ -1,5 +1,11 @@
 # Adaptation of ORB_SLAM for Introspection
 
+## Training Data Generation
+
+### Bad Region Heatmap/Heatmap Masks Not Generates
+
+If the `bad_region_heatmap` or `bad_region_heatmap_mask` data are not generated it may indicate that the input data set is not suitable for training data set generation. A likely cause of this is that your left camera -> lidar transform is incorrect. You can prove this is the case by examining the `results/bad_region_heatmap_masked_vis` images. An image with a red dot at the top is not suitable for training, and an image with a green dot is suitable for training. If all the images have red dots, this is the problem!
+
 ## YAML Parameters
 
 ### Camera Parameters
