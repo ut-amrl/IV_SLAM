@@ -139,7 +139,8 @@ def main(cfg, args, gpus):
     "train_jackal_0": [
           1, 2, 3, 4, 8, 10, 13, 16, 17, 20, 22, 25, 27, 28, 31, 36, 42],
     "train_jackal_t": [37],
-    "train_stereo_2020_12_21_run1_t": [1]
+    "train_stereo_2020_12_21_run1_t": [1],
+    "train_stereo_2021_01_13_run2_t": [1]
     }
 
   valid_set_dict = {
@@ -147,6 +148,7 @@ def main(cfg, args, gpus):
     "valid_jackal_0": [14],
     "valid_jackal_t": [37],
     "valid_stereo_2020_12_21_run1_t": [1],
+    "valid_stereo_2021_01_13_run2_t": [1]
   }
 
 
