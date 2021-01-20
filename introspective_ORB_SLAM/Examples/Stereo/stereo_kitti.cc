@@ -54,7 +54,7 @@ ORB_SLAM2::System *SLAM_ptr;
 DEFINE_string(vocab_path, "", "Path to ORB vocabulary.");
 DEFINE_string(settings_path, "", "Path to ORB-SLAM config file.");
 DEFINE_string(data_path, "", "Path to the source dataset.");
-DEFINE_int32(session, -1, "Unique session ID.");
+DEFINE_string(session, "", "Unique session ID.");
 DEFINE_string(ground_truth_path, "", "Path to ground truth poses.");
 DEFINE_string(img_qual_path,
               "",
@@ -124,8 +124,11 @@ DEFINE_bool(use_gpu, false, "Uses GPU for running the introspection function.");
 DEFINE_bool(rectify_images,
             false,
             "Set to true, if input images need "
-            "to be rectified. NOTE: Currently it is assumed that the images "
-            "are already undistorted, hence distortion parameters are ignored");
+            "to be rectified.");
+DEFINE_bool(undistort_images,
+            false,
+            "Set to true, if input images need "
+            "to be undistorted.");
 
 DECLARE_bool(help);
 DECLARE_bool(helpshort);
@@ -152,7 +155,7 @@ void CheckCommandLineArgs(char **argv) {
 }
 
 void LoadImages(const string &strPathToSequence,
-                const int &sessionID,
+                const string &session,
                 vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight,
                 vector<double> &vTimestamps);
@@ -160,7 +163,7 @@ void LoadImages(const string &strPathToSequence,
 // Loads images as well as the corresponding predicted image quality heatmaps
 void LoadImagesWithQual(const string &strPathToSequence,
                         const string &strPathToImageQual,
-                        const int &sessionID,
+                        const string &session,
                         vector<string> &vstrImageLeft,
                         vector<string> &vstrImageRight,
                         vector<string> &vstrImageQualFilenames,
@@ -171,7 +174,7 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       const string &strPathToGroundTruth,
                       const string &strPathToImageQual,
                       const string &strPathToPoseUncertainty,
-                      const int &sessionID,
+                      const string &session,
                       const bool &load_pose_uncertainty,
                       vector<string> &vstrImageLeft,
                       vector<string> &vstrImageRight,
@@ -252,7 +255,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Read rectification parameters
+  // Read undistortion/rectification parameters
   cv::FileStorage fsSettings(FLAGS_settings_path, cv::FileStorage::READ);
   if (!fsSettings.isOpened()) {
     cerr << "ERROR: Wrong path to settings" << endl;
@@ -269,26 +272,66 @@ int main(int argc, char **argv) {
   fsSettings["LEFT.R"] >> R_l;
   fsSettings["RIGHT.R"] >> R_r;
 
-  //     fsSettings["LEFT.D"] >> D_l;
-  //     fsSettings["RIGHT.D"] >> D_r;
+  fsSettings["LEFT.D"] >> D_l;
+  fsSettings["RIGHT.D"] >> D_r;
 
   int rows_l = fsSettings["LEFT.height"];
   int cols_l = fsSettings["LEFT.width"];
   int rows_r = fsSettings["RIGHT.height"];
   int cols_r = fsSettings["RIGHT.width"];
 
-  if (FLAGS_rectify_images) {
+  if (FLAGS_rectify_images || FLAGS_undistort_images) {
     if (K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() ||
-        R_l.empty() || R_r.empty() || rows_l == 0 || rows_r == 0 ||
-        cols_l == 0 || cols_r == 0) {
-      cerr << "ERROR: Calibration parameters to rectify stereo are missing!"
+        R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
+        rows_l == 0 || rows_r == 0 || cols_l == 0 || cols_r == 0) {
+      cerr << "ERROR: Calibration parameters to undistort/rectify stereo are "
+              "missing!"
            << endl;
       return -1;
     }
   }
 
   cv::Mat M1l, M2l, M1r, M2r;
-  if (FLAGS_rectify_images) {
+  if (FLAGS_rectify_images && FLAGS_undistort_images) {
+    cv::initUndistortRectifyMap(K_l,
+                                D_l,
+                                R_l,
+                                P_l.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_l, rows_l),
+                                CV_32F,
+                                M1l,
+                                M2l);
+    cv::initUndistortRectifyMap(K_r,
+                                D_r,
+                                R_r,
+                                P_r.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_r, rows_r),
+                                CV_32F,
+                                M1r,
+                                M2r);
+  } else if (FLAGS_rectify_images) {
+    D_l = cv::Mat::zeros(1, 4, CV_32F);
+    D_r = cv::Mat::zeros(1, 4, CV_32F);
+
+    cv::initUndistortRectifyMap(K_l,
+                                D_l,
+                                R_l,
+                                P_l.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_l, rows_l),
+                                CV_32F,
+                                M1l,
+                                M2l);
+    cv::initUndistortRectifyMap(K_r,
+                                D_r,
+                                R_r,
+                                P_r.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_r, rows_r),
+                                CV_32F,
+                                M1r,
+                                M2r);
+  } else if (FLAGS_undistort_images) {
+    R_l = cv::Mat::eye(3, 3, CV_32F);
+    R_r = cv::Mat::eye(3, 3, CV_32F);
     cv::initUndistortRectifyMap(K_l,
                                 D_l,
                                 R_l,
@@ -393,7 +436,8 @@ int main(int argc, char **argv) {
   cout << "Start frame: " << FLAGS_start_frame << endl;
 
   // Main loop
-  cv::Mat imLeft, imRight, imLeftRect, imRightRect;
+  // Processing in this case refers to undisortion/rectification
+  cv::Mat imLeft, imRight, imLeftProcessed, imRightProcessed;
   int end_frame;
   if (FLAGS_end_frame > 0) {
     end_frame = std::min(nImages, FLAGS_end_frame);
@@ -426,12 +470,12 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    if (FLAGS_rectify_images) {
-      cv::remap(imLeft, imLeftRect, M1l, M2l, cv::INTER_LINEAR);
-      cv::remap(imRight, imRightRect, M1r, M2r, cv::INTER_LINEAR);
+    if (FLAGS_rectify_images || FLAGS_undistort_images) {
+      cv::remap(imLeft, imLeftProcessed, M1l, M2l, cv::INTER_LINEAR);
+      cv::remap(imRight, imRightProcessed, M1r, M2r, cv::INTER_LINEAR);
     } else {
-      imLeftRect = imLeft;
-      imRightRect = imRight;
+      imLeftProcessed = imLeft;
+      imRightProcessed = imRight;
     }
 
     // Read the predicted quality image
@@ -483,7 +527,7 @@ int main(int argc, char **argv) {
         // ShowImage(cost_img_cv, "Predicted cost image");
       }
 
-      if (FLAGS_rectify_images) {
+      if (FLAGS_rectify_images || FLAGS_undistort_images) {
         cv::remap(cost_img_cv, cost_img_cv, M1l, M2l, cv::INTER_LINEAR);
       }
 
@@ -501,8 +545,8 @@ int main(int argc, char **argv) {
     // Pass the images to the SLAM system
     if (FLAGS_ivslam_enabled) {
       if (FLAGS_gt_pose_available) {
-        SLAM.TrackStereo(imLeftRect,
-                         imRightRect,
+        SLAM.TrackStereo(imLeftProcessed,
+                         imRightProcessed,
                          tframe,
                          cam_poses_gt[ni],
                          cam_poses_gt_cov,
@@ -512,8 +556,8 @@ int main(int argc, char **argv) {
                          cost_img_cv);
       } else {
         cv::Mat cam_pose_gt = cv::Mat(0, 0, CV_32F);
-        SLAM.TrackStereo(imLeftRect,
-                         imRightRect,
+        SLAM.TrackStereo(imLeftProcessed,
+                         imRightProcessed,
                          tframe,
                          cam_pose_gt,
                          cam_poses_gt_cov,
@@ -523,7 +567,7 @@ int main(int argc, char **argv) {
                          cost_img_cv);
       }
     } else {
-      SLAM.TrackStereo(imLeftRect, imRightRect, tframe);
+      SLAM.TrackStereo(imLeftProcessed, imRightProcessed, tframe);
     }
 
 #ifdef COMPILEDWITHC11
@@ -583,12 +627,13 @@ int main(int argc, char **argv) {
 }
 
 void LoadImages(const string &strPathToSequence,
-                const int &session,
+                const string &session,
                 vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight,
                 vector<double> &vTimestamps) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + std::to_string(session) +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {
     string s;
@@ -620,13 +665,14 @@ void LoadImages(const string &strPathToSequence,
 
 void LoadImagesWithQual(const string &strPathToSequence,
                         const string &strPathToImageQual,
-                        const int &session,
+                        const string &session,
                         vector<string> &vstrImageLeft,
                         vector<string> &vstrImageRight,
                         vector<string> &vstrImageQualFilenames,
                         vector<double> &vTimestamps) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + std::to_string(session) +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {
     string s;
@@ -680,7 +726,7 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       const string &strPathToGroundTruth,
                       const string &strPathToImageQual,
                       const string &strPathToPoseUncertainty,
-                      const int &session,
+                      const string &session,
                       const bool &load_pose_uncertainty,
                       vector<string> &vstrImageLeft,
                       vector<string> &vstrImageRight,
@@ -689,7 +735,8 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       vector<cv::Mat> *cam_pose_gt,
                       vector<Eigen::Vector2f> *rel_cam_pose_uncertainty) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + std::to_string(session) +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {
     string s;
