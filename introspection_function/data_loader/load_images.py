@@ -83,8 +83,8 @@ class ImageQualityDataset(Dataset):
     self.session_num = np.array([], dtype=int)
 
     for session_num in session_list:
-      session_folder = self.session_name_format.format(session_num)
-      session_path = root_dir + '/' + session_folder + '/'
+      session_folder = self.session_name_format.format(session_num) + "/KITTI_format/sequences/"
+      session_path = root_dir + '/' + session_folder 
 
       if self.no_meta_data_available:
         if self.load_labels:
@@ -113,7 +113,7 @@ class ImageQualityDataset(Dataset):
   def __getitem__(self, idx):
     session_folder = self.session_name_format.format(self.session_num[idx])
     curr_img_path = self.raw_img_dir + '/' + session_folder + \
-                   '/' +self.raw_img_folder + '/' + self.img_names[idx].rstrip()
+                    "/KITTI_format/sequences/" +self.raw_img_folder + '/' + self.img_names[idx].rstrip()
     curr_img_score_path = self.root_dir + '/' + session_folder + \
                     '/bad_region_heatmap/' + self.img_names[idx].rstrip()
     curr_img_mask_path = self.root_dir + '/' + session_folder + \

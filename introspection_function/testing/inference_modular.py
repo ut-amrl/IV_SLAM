@@ -99,7 +99,7 @@ def save_result_images(input_imgs,
     #cbar = ax.cax.colorbar(im)
     #cbar = grid.cbar_axes[0].colorbar(im)
 
-    session_folder = "{0:05d}".format(session_nums[i])
+    session_folder = "{0:05d}".format(session_nums[i]) 
 
     # Rescale the raw output of the network and save it as a grayscale jpg image
     if save_raw_output:
@@ -208,7 +208,8 @@ def main(cfg, args, gpus):
                            4034, 4036],
     "test_jackal_0": [
                 5, 6, 7, 11, 15, 18, 19, 23, 24, 29, 30, 33, 37, 40, 43],
-    "test_jackal_t": [37]                
+    "test_jackal_t": [37],  
+    "test_ahg_husky_t": [1]               
   }
 
   session_list_test = [7, 9, 10]
@@ -285,6 +286,8 @@ def main(cfg, args, gpus):
 
   # load_mask = cfg.TRAIN.use_masked_loss or cfg.MODEL.predict_conf_mask 
   load_mask = False
+  print("raw image root: " + cfg.DATASET.raw_img_root)
+  print("raw image folder: " + cfg.DATASET.raw_img_folder)
   test_dataset = ImageQualityDataset(cfg.DATASET.root,
                                 cfg.DATASET.raw_img_root,
                                 session_list_test,

@@ -107,7 +107,7 @@ def main():
     img = data_transform_input(img)
     img = img.reshape((1, 3, img.shape[1], img.shape[2]))
   else:
-    img = torch.rand(1, 3, 600, 960)
+    img = torch.rand(1, 3, 1024, 1224)
   # ***********************
 
   # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
