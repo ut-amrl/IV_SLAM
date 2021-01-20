@@ -834,7 +834,7 @@ void Tracking::Track() {
           mFailureCount++;
           LOG(WARNING) << "Failure #" << mFailureCount << ". Resetting...";
 
-          if (!mbSilent) {
+          if (!mbSilent && iLoggingLevel >= 1) {
             SaveTrackingResults(true);
           }
           mpSystem->Reset();
@@ -2446,31 +2446,25 @@ void Tracking::SaveTrackingResults(bool saving_on_failure) {
   string suffix = ss_suffix.str();
   string path_to_traj, path_to_traj_kitti, path_to_ts_kitti;
   string path_to_failure_log;
-  if (iLoggingLevel >= 1) {
-    string dir = mvSaveVisualizationPath + "/trajectory/";
-    path_to_traj = dir + "KeyFrameTrajectory_TUM_" + suffix + ".txt";
-    path_to_failure_log = mvSaveVisualizationPath + "/failure_log.txt";
 
-    string dir_kitti = mvSaveVisualizationPath + "/trajectory_kitti/";
-    path_to_traj_kitti = dir_kitti + "Trajectory_KITTI_" + suffix + ".txt";
-    path_to_ts_kitti = dir_kitti + "KITTI_time_" + suffix + ".txt";
+  string dir = mvSaveVisualizationPath + "/trajectory/";
+  path_to_traj = dir + "KeyFrameTrajectory_TUM_" + suffix + ".txt";
+  path_to_failure_log = mvSaveVisualizationPath + "/failure_log.txt";
 
-    CreateDirectory(mvSaveVisualizationPath);
-    if (mFailureCount <= 0 || (mFailureCount <= 1 && saving_on_failure)) {
-      RemoveDirectory(dir);
-      RemoveDirectory(dir_kitti);
-    }
-    CreateDirectory(dir);
-    if (save_in_kitti_format) {
-      CreateDirectory(dir_kitti);
-    }
-  } else {
-    path_to_traj = "KeyFrameTrajectory_TUM_" + suffix + ".txt";
-    path_to_traj_kitti = "Trajectory_KITTI_" + suffix + ".txt";
-    path_to_ts_kitti = "KITTI_time_" + suffix + ".txt";
-    path_to_failure_log = "failure_log.txt";
+  string dir_kitti = mvSaveVisualizationPath + "/trajectory_kitti/";
+  path_to_traj_kitti = dir_kitti + "Trajectory_KITTI_" + suffix + ".txt";
+  path_to_ts_kitti = dir_kitti + "KITTI_time_" + suffix + ".txt";
+
+  CreateDirectory(mvSaveVisualizationPath);
+  if (mFailureCount <= 0 || (mFailureCount <= 1 && saving_on_failure)) {
+    RemoveDirectory(dir);
+    RemoveDirectory(dir_kitti);
   }
-
+  CreateDirectory(dir);
+  if (save_in_kitti_format) {
+    CreateDirectory(dir_kitti);
+  }
+  
   mpSystem->SaveKeyFrameTrajectoryTUM(path_to_traj);
   if (save_in_kitti_format) {
     mpSystem->SaveTrajectoryKITTI(path_to_traj_kitti, path_to_ts_kitti);
