@@ -109,10 +109,6 @@ DEFINE_bool(inference_mode, false, "Enables the inference mode.");
 DEFINE_bool(introspection_func_enabled,
             false,
             "Enables the introspection function.");
-DEFINE_bool(save_visualizations,
-            false,
-            "Saves visualization to file if in "
-            "ivslam_enabled mode.");
 DEFINE_bool(enable_viewer, true, "Enables the viewer.");
 DEFINE_bool(gt_pose_available,
             true,
@@ -207,7 +203,6 @@ int main(int argc, char **argv) {
   google::InstallFailureSignalHandler();
   google::InitGoogleLogging(argv[0]);
   FLAGS_stderrthreshold = 2;   // ERROR level logging.
-  FLAGS_minloglevel = 1;       // WARNING level
   FLAGS_colorlogtostderr = 1;  // Colored logging.
   FLAGS_logtostderr = true;    // Don't log to disk
   signal(SIGINT, SignalHandler);
@@ -411,7 +406,7 @@ int main(int argc, char **argv) {
                          FLAGS_enable_viewer,
                          FLAGS_ivslam_enabled,
                          FLAGS_inference_mode,
-                         FLAGS_save_visualizations,
+                         FLAGS_minloglevel,
                          FLAGS_create_ivslam_dataset,
                          FLAGS_run_single_threaded,
                          use_BoW,

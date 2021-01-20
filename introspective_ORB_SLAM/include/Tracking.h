@@ -225,7 +225,7 @@ public:
     // that are selected to be used for training
     std::string mvOutputIntrospectionDatasetFullPath;
     
-    bool mbSaveVisualizationsToFile = false;
+    int iLoggingLevel = 0;
     std::string mvSaveVisualizationPath;
     
     
