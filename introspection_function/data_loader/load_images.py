@@ -83,13 +83,13 @@ class ImageQualityDataset(Dataset):
     self.session_num = np.array([], dtype=int)
 
     for session_num in session_list:
-      session_folder = self.session_name_format.format(session_num) + "/KITTI_format/sequences/"
+      session_folder = self.session_name_format.format(session_num)
       session_path = root_dir + '/' + session_folder 
 
       if self.no_meta_data_available:
         if self.load_labels:
           img_dir = (self.root_dir + '/' + session_folder + \
-                    '/bad_region_heatmap/')
+                    '/generated_training_data/bad_region_heatmap/')
         else:
           img_dir = (self.raw_img_dir + '/' + session_folder +
                    '/' + self.raw_img_folder)
@@ -112,12 +112,13 @@ class ImageQualityDataset(Dataset):
   # works as a metric of which parts of the input image are bad for VO/SLAM
   def __getitem__(self, idx):
     session_folder = self.session_name_format.format(self.session_num[idx])
-    curr_img_path = self.raw_img_dir + '/' + session_folder + \
-                    "/KITTI_format/sequences/" +self.raw_img_folder + '/' + self.img_names[idx].rstrip()
+    curr_img_path = self.raw_img_dir + '/' + session_folder + '/' + \
+                    self.raw_img_folder + '/' + self.img_names[idx].rstrip()
+    
     curr_img_score_path = self.root_dir + '/' + session_folder + \
-                    '/bad_region_heatmap/' + self.img_names[idx].rstrip()
+                    '/generated_training_data/bad_region_heatmap/' + self.img_names[idx].rstrip()
     curr_img_mask_path = self.root_dir + '/' + session_folder + \
-                    '/bad_region_heatmap_mask/' + self.img_names[idx].rstrip()
+                    '/generated_training_data/bad_region_heatmap_mask/' + self.img_names[idx].rstrip()
 
     # *****************
     # Load target image if available
