@@ -699,14 +699,17 @@ void Tracking::Track() {
         mFeatureEvaluator->GenerateImageQualityHeatmapGP();
       } else {
         bool tracking_reliable = EvaluateTrackingAccuracy();
-        Reliability reliability = (tracking_reliable) ? Reliable : Unreliable;
-        mFeatureEvaluator->SetFrameReliability(reliability);
 
         // Generate image quality heatmap from unsupervised quality
         // estimations
         mFeatureEvaluator->GenerateUnsupImageQualityHeatmapGP(mCurrentFrame);
-        //           mFeatureEvaluator->GenerateUnsupImageQualityHeatmap(mCurrentFrame,
-        //                                                   mvSaveVisualizationPath);
+        bool mask_is_all_zero = mFeatureEvaluator->IsHeatmapMaskAllZero();
+
+        // Skip frames where either 1- tracking accuracy is low or 2- heatmap
+        // mask is all zeros by tagging them as unreliable
+        Reliability reliability =
+            (tracking_reliable && !mask_is_all_zero) ? Reliable : Unreliable;
+        mFeatureEvaluator->SetFrameReliability(reliability);
 
         // It is for running
         // feature evaluation on the full set of matched features including
@@ -2464,7 +2467,7 @@ void Tracking::SaveTrackingResults(bool saving_on_failure) {
   if (save_in_kitti_format) {
     CreateDirectory(dir_kitti);
   }
-  
+
   mpSystem->SaveKeyFrameTrajectoryTUM(path_to_traj);
   if (save_in_kitti_format) {
     mpSystem->SaveTrajectoryKITTI(path_to_traj_kitti, path_to_ts_kitti);

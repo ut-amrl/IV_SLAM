@@ -154,6 +154,10 @@ class FeatureEvaluator {
   // estimated by outlier analysis
   void GenerateUnsupImageQualityHeatmapGP(ORB_SLAM2::Frame& frame);
 
+  // Returns true if the latest generated heatmap is all masked out for training
+  // (Not usable for training)
+  bool IsHeatmapMaskAllZero();
+
   // Visualizes reprojection error on current image via drawing arrows
   // from map point reprojection to the corresponding keypoints. Returns false
   // if the active error_type_ is not reprojection error.
