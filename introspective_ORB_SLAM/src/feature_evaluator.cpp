@@ -274,7 +274,8 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
   if (!file.isOpened()) {
     LOG(FATAL) << "ERROR: Wrong path to calibration file: " << calib_file;
   }
-  // TODO: Find a way to align this with the output of the stereo calibration format
+  // TODO: Find a way to align this with the output of the stereo calibration
+  // format
   cv::Mat K_l, P_l, R_l, D_l;
   file["LEFT.K"] >> K_l;
   file["LEFT.P"] >> P_l;
@@ -284,10 +285,12 @@ void FeatureEvaluator::LoadRectificationMap(const std::string& calib_file) {
   int rows_l = file["LEFT.height"];
   int cols_l = file["LEFT.width"];
 
-  if (K_l.empty() || P_l.empty() || R_l.empty() || D_l.empty() || rows_l == 0 || cols_l == 0) {
-    LOG(WARNING) << "Required parameters for image undistortion/rectification were not "
-                 << "found in the calibration file. Generated training "
-                 << "heatmaps cannot be undistorted/rectified.";
+  if (K_l.empty() || P_l.empty() || R_l.empty() || D_l.empty() || rows_l == 0 ||
+      cols_l == 0) {
+    LOG(WARNING)
+        << "Required parameters for image undistortion/rectification were not "
+        << "found in the calibration file. Generated training "
+        << "heatmaps cannot be undistorted/rectified.";
     rectification_map_available_ = false;
     return;
   }
@@ -796,6 +799,18 @@ void FeatureEvaluator::GenerateUnsupImageQualityHeatmapGP(
                       (bin_num_y - 1) * kBinStride_ + kBinSizeY_));
 
   bad_region_heatmap_.convertTo(bad_region_heatmap_, CV_8U, 255.0);
+}
+
+bool FeatureEvaluator::IsHeatmapMaskAllZero() {
+  if (bad_region_heatmap_mask_.empty()) {
+    return true;
+  } else {
+    if (cv::sum(bad_region_heatmap_mask_)[0] > 0) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 }
 
 bool FeatureEvaluator::DrawReprojectionErrVec() {
