@@ -54,7 +54,6 @@ ORB_SLAM2::System *SLAM_ptr;
 DEFINE_string(vocab_path, "", "Path to ORB vocabulary.");
 DEFINE_string(settings_path, "", "Path to ORB-SLAM config file.");
 DEFINE_string(data_path, "", "Path to the source dataset.");
-DEFINE_string(session, "", "Unique session ID.");
 DEFINE_string(ground_truth_path, "", "Path to ground truth poses.");
 DEFINE_string(img_qual_path,
               "",
@@ -151,7 +150,6 @@ void CheckCommandLineArgs(char **argv) {
 }
 
 void LoadImages(const string &strPathToSequence,
-                const string &session,
                 vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight,
                 vector<double> &vTimestamps);
@@ -159,7 +157,6 @@ void LoadImages(const string &strPathToSequence,
 // Loads images as well as the corresponding predicted image quality heatmaps
 void LoadImagesWithQual(const string &strPathToSequence,
                         const string &strPathToImageQual,
-                        const string &session,
                         vector<string> &vstrImageLeft,
                         vector<string> &vstrImageRight,
                         vector<string> &vstrImageQualFilenames,
@@ -170,7 +167,6 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       const string &strPathToGroundTruth,
                       const string &strPathToImageQual,
                       const string &strPathToPoseUncertainty,
-                      const string &session,
                       const bool &load_pose_uncertainty,
                       vector<string> &vstrImageLeft,
                       vector<string> &vstrImageRight,
@@ -359,11 +355,10 @@ int main(int argc, char **argv) {
   std::unordered_map<std::string, int> pose_unc_map;
 
   if (!FLAGS_ivslam_enabled) {
-    LoadImages(FLAGS_data_path, FLAGS_session, vstrImageLeft, vstrImageRight, vTimestamps);
+    LoadImages(FLAGS_data_path, vstrImageLeft, vstrImageRight, vTimestamps);
   } else if (!FLAGS_gt_pose_available) {
     LoadImagesWithQual(FLAGS_data_path,
                        FLAGS_img_qual_path,
-                       FLAGS_session, 
                        vstrImageLeft,
                        vstrImageRight,
                        vstrImageQualFilenames,
@@ -373,7 +368,6 @@ int main(int argc, char **argv) {
                      FLAGS_ground_truth_path,
                      FLAGS_img_qual_path,
                      FLAGS_rel_pose_uncertainty_path,
-                     FLAGS_session, 
                      FLAGS_load_rel_pose_uncertainty,
                      vstrImageLeft,
                      vstrImageRight,
@@ -622,12 +616,11 @@ int main(int argc, char **argv) {
 }
 
 void LoadImages(const string &strPathToSequence,
-                const string &session,
                 vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight,
                 vector<double> &vTimestamps) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/times.txt";
   std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {
@@ -660,13 +653,12 @@ void LoadImages(const string &strPathToSequence,
 
 void LoadImagesWithQual(const string &strPathToSequence,
                         const string &strPathToImageQual,
-                        const string &session,
                         vector<string> &vstrImageLeft,
                         vector<string> &vstrImageRight,
                         vector<string> &vstrImageQualFilenames,
                         vector<double> &vTimestamps) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/times.txt";
   std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {
@@ -721,7 +713,6 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       const string &strPathToGroundTruth,
                       const string &strPathToImageQual,
                       const string &strPathToPoseUncertainty,
-                      const string &session,
                       const bool &load_pose_uncertainty,
                       vector<string> &vstrImageLeft,
                       vector<string> &vstrImageRight,
@@ -730,7 +721,7 @@ void LoadImagesWithGT(const string &strPathToSequence,
                       vector<cv::Mat> *cam_pose_gt,
                       vector<Eigen::Vector2f> *rel_cam_pose_uncertainty) {
   ifstream fTimes;
-  string strPathTimeFile = strPathToSequence + "/" + session +"_times.txt";
+  string strPathTimeFile = strPathToSequence + "/times.txt";
   std::cout << strPathTimeFile << std::endl;
   fTimes.open(strPathTimeFile.c_str());
   while (!fTimes.eof()) {

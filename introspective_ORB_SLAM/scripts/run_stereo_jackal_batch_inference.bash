@@ -18,6 +18,7 @@ RUN_SINGLE_THREADED="false"
 ENABLE_VIEWER="true"
 USE_GPU="true"
 RECTIFY_IMGS="true"
+UNDISTORT_IMGS="false"
 
 OPTIMIZER_RUN_EXTRA_ITERATIONS="true"
 OPTIMIZER_POSE_OPT_ITER_COUNT="4" # def: 4
@@ -56,7 +57,7 @@ for session in $SESSIONS; do
  
   
   PREDICTED_IMAGE_QUAL_FOLDER=\
-$PREDICTED_IMAGE_QUAL_BASE_DIR/$SESSION_NUM_STR/
+  $PREDICTED_IMAGE_QUAL_BASE_DIR/$SESSION_NUM_STR/
 
   REL_POSE_UNC_PATH=$LIDAR_POSE_UNC_PATH/$SESSION_NUM_STR"_predicted_unc.txt"
 
@@ -65,6 +66,7 @@ $PREDICTED_IMAGE_QUAL_BASE_DIR/$SESSION_NUM_STR/
   --vocab_path="../Vocabulary/ORBvoc.txt" \
   --settings_path=$CONFIG_FILE_DIR/$CONFIG_FILE_NAME \
   --data_path=$SEQUENCE_PATH/$SESSION_NUM_STR \
+  --minloglevel="0" \
   --ground_truth_path=$GROUND_TRUTH_PATH/$SESSION_NUM_STR".txt" \
   --img_qual_path=$PREDICTED_IMAGE_QUAL_FOLDER \
   --introspection_model_path=$INTROSPECTION_MODEL_PATH \
@@ -79,10 +81,10 @@ $PREDICTED_IMAGE_QUAL_BASE_DIR/$SESSION_NUM_STR/
   --create_ivslam_dataset=$CREATE_IVSLAM_DATASET \
   --ivslam_enabled=$IVSLAM_ENABLED \
   --inference_mode=$INFERENCE_MODE \
-  --save_visualizations=$SAVE_VISUALIZATIONS \
   --enable_viewer=$ENABLE_VIEWER \
   --use_gpu=$USE_GPU \
   --rectify_images=$RECTIFY_IMGS \
+  --undistort_images=$UNDISTORT_IMGS \
   --optimizer_run_extra_iter=$OPTIMIZER_RUN_EXTRA_ITERATIONS \
   --optimizer_pose_opt_iter_count=$OPTIMIZER_POSE_OPT_ITER_COUNT \
   --tracking_ba_rate=$TRACKING_BA_RATE \
