@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+# Author Sadegh Rabiee
 
 import os, argparse
 from os.path import isfile, join
@@ -11,31 +14,25 @@ import csv
 import subprocess
 import numpy as np
 from numpy import linalg as LA
-from drawing_tools import *
+# from drawing_tools import *
+
 
 # After running evaluate_postproc.py on SLAM results, run this batch to
 # generate the visualizations
 
 
-EVAL_PATH1_DEF = ("/media/ssd2/results/introspective_SLAM/feature_evaluation/"
-             "AirSim/ORB_SLAM2/Exp2AV3InfOrb")
-EVAL_PATH2_DEF = ("/media/ssd2/results/introspective_SLAM/feature_evaluation/"
-             "AirSim/ORB_SLAM2/Exp2AV3InfOrb")
-
-
-
+EVAL_PATH_DEF = "/home/administrator/DATA/MODEL/ahg_husky/evaluate_model"
 
 
 INPUT_RESULT_FILE_NAME = 'eval_results.json'
 RESULT_FILES_PREFIXES=['rot_', 'trans_'] # rot_, trans_, pose_
-METHOD_NAMES=['ORB-SLAM',
-              'IV-SLAM']
+
 
 # Sort the trajectories in the bar plot in descending order in terms of the
 # failure count of method1.
 SORT_TRAJ=True
 SHOW_PLOTS=False
-USE_TEX_FORMAT=True
+USE_TEX_FORMAT=False
 MANUAL_Y_AXIS_LIMITS=False
 USE_BROKEN_PLOTS=False
 
@@ -51,43 +48,39 @@ UNIFY_TRAJECTORIES=False
 # Number of y ticks to be shown on the failure count figure
 FAILURE_COUNT_Y_TICKS_NUM = 3 # 3 for jackal, 6 for airsim
 
+modes=["ORB_SLAM", "IV_SLAM"]
+session_idxs = [1,2,3]
+
 def main():
   global METHOD_NAMES
   parser = argparse.ArgumentParser(description='After running '
                  'evaluate_postproc.py on SLAM results, run this script to '
                  'generate the visualizations')
-  parser.add_argument("--eval_path1",
-              default=EVAL_PATH1_DEF,
+  parser.add_argument("--eval_path",
+              default=EVAL_PATH_DEF,
               help="path to the base directory of the first set of SLAM results to be evaluated",
               type=str)
-  parser.add_argument("--eval_path2",
-              default=EVAL_PATH2_DEF,
-              help="path to the base directory of the second set of SLAM results to be evaluated",
-              type=str)
   args = parser.parse_args()
-  EVAL_PATH1 = args.eval_path1
-  EVAL_PATH2 = args.eval_path2
-  OUTPUT_VIS_DIR = EVAL_PATH2
-
-  eval_paths = [EVAL_PATH1, EVAL_PATH2]
+  EVAL_PATH = args.eval_path
+  OUTPUT_VIS_DIR = EVAL_PATH
 
   # Set matplotlib params
-  beautify_plots()
+  # beautify_plots()
   if USE_TEX_FORMAT:
-    matplotlib.rc('text', usetex=True)
-    matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-  colors = generate_colors(3)
-  colors[1] = colors[1]
+    plt.rc('text', usetex=True)
+    plt.rcParams['text.latex.preamble'] = [r'\boldmath']
+  #colors = generate_colors(3)
+  #colors[1] = colors[1]
   
   # Overwrite figure size
-  matplotlib.rc('figure', figsize=[7, 4]) # For double column paper format
+  plt.rc('figure', figsize=[7, 4]) # For double column paper format
   # matplotlib.rc('figure', figsize=[7, 5]) # For single column paper format
 
   for RESULT_FILES_PREFIX in RESULT_FILES_PREFIXES:
     results = []
 
-    for path in eval_paths:
-      res_file = os.path.join(path, RESULT_FILES_PREFIX+ INPUT_RESULT_FILE_NAME)
+    for mode in modes:
+      res_file = os.path.join(EVAL_PATH, mode + "_" + RESULT_FILES_PREFIX + INPUT_RESULT_FILE_NAME)
       with open(res_file) as json_file:
         data = json.load(json_file)
         results += [data]
@@ -182,8 +175,8 @@ def main():
     X = np.arange(len(trajectories))
     fig = plt.figure()
     ax = fig.add_subplot(211)
-    ax.bar(X + 0.00, np.transpose(failure_counts[:, 0]), color=colors[0], width=0.25)
-    ax.bar(X + 0.25, np.transpose(failure_counts[:, 1]), color=colors[1], width=0.25)
+    ax.bar(X + 0.00, np.transpose(failure_counts[:, 0]), width=0.25)
+    ax.bar(X + 0.25, np.transpose(failure_counts[:, 1]), width=0.25)
 
     if USE_TEX_FORMAT:
       trajectory_names = bold_text_list(trajectory_names)
@@ -192,7 +185,7 @@ def main():
     ax.set_ylabel('Failure Count')
     # ax.set_title('Failure Count Comparison')
     plt.xticks(X, trajectory_names, rotation=45)
-    ax.legend(labels=METHOD_NAMES)
+    ax.legend(labels=modes)
     plt.xlabel('Trajectories')
     plt.ylabel("Failure Count")
 
@@ -201,8 +194,8 @@ def main():
     X = np.arange(len(trajectories))
     ax = fig.add_subplot(212)
     ax.set_ylabel('RPE (RMSE)')
-    ax.bar(X + 0.00, np.transpose(error_vals[:, 0]), color=colors[0], width=0.25)
-    ax.bar(X + 0.25, np.transpose(error_vals[:, 1]), color=colors[1], width=0.25)
+    ax.bar(X + 0.00, np.transpose(error_vals[:, 0]), width=0.25)
+    ax.bar(X + 0.25, np.transpose(error_vals[:, 1]), width=0.25)
 
     error_unit = ""
     if RESULT_FILES_PREFIX == 'rot_':
@@ -213,25 +206,25 @@ def main():
       error_unit = '(unit-less)'
     # ax.set_title('Failure Count Comparison')
     plt.xticks(X, trajectory_names, rotation=45)
-    ax.legend(labels=METHOD_NAMES)
+    ax.legend(labels=modes)
     plt.xlabel('Trajectories')
     plt.ylabel("RPE " + error_unit)
 
 
     if SAVE_SEPARATE_GRAPHS:
       
-      y_label = bold_text("RPE " + error_unit)
+      y_label = "RPE " + error_unit
       if error_unit == '(m)':
-        y_label = bold_text('Trans. Err. (m)')
+        y_label = 'Trans. Err. (m)'
       elif error_unit == '(deg)':
-        y_label = bold_text('Rot. Err. (deg)')
+        y_label = 'Rot. Err. (deg)'
       fig3 = plt.figure()
       ax = fig3.add_subplot(111)
-      ax.bar(X + 0.00, np.transpose(error_vals[:, 0]), color=colors[0], width=0.25)
-      ax.bar(X + 0.25, np.transpose(error_vals[:, 1]), color=colors[1], width=0.25)
+      ax.bar(X + 0.00, np.transpose(error_vals[:, 0]), width=0.25)
+      ax.bar(X + 0.25, np.transpose(error_vals[:, 1]), width=0.25)
       plt.xticks(X, trajectory_names, rotation=45)
-      ax.legend(labels=METHOD_NAMES)
-      plt.xlabel(bold_text('Trajectories'))
+      ax.legend(labels=modes)
+      plt.xlabel('Trajectories')
       plt.ylabel(y_label)
       plt.tight_layout()
 
@@ -292,10 +285,8 @@ def main():
 
       fig4 = plt.figure()
       ax = fig4.add_subplot(111)
-      ax.bar(X + 0.00, np.transpose(failure_counts_sorted[:, 0]), color=colors[0], 
-            width=0.25)
-      ax.bar(X + 0.25, np.transpose(failure_counts_sorted[:, 1]), color=colors[1], 
-            width=0.25)
+      ax.bar(X + 0.00, np.transpose(failure_counts_sorted[:, 0]), width=0.25)
+      ax.bar(X + 0.25, np.transpose(failure_counts_sorted[:, 1]), width=0.25)
       plt.xticks(X, trajectory_names_sorted, rotation=45)
       ymin = np.min(failure_counts_sorted)
       ymax = math.ceil(np.max(failure_counts_sorted))+1
@@ -303,9 +294,9 @@ def main():
         yint = range(0, ymax, math.floor((ymax - ymin) / 
                                           FAILURE_COUNT_Y_TICKS_NUM) )
         plt.yticks(yint)
-      ax.legend(labels=METHOD_NAMES)
-      plt.xlabel(bold_text('Trajectories'))
-      plt.ylabel(bold_text("Failure Count"))
+      ax.legend(labels=modes)
+      plt.xlabel('Trajectories')
+      plt.ylabel("Failure Count")
       plt.tight_layout()
 
     # *********************************************
@@ -313,13 +304,13 @@ def main():
     fig2 = plt.figure()
     ax = fig2.add_subplot(111)
     ax.bar(X + 0.00, np.transpose(100.0 * traversed_traj_lengths[:, 0] / full_traj_lengths[:,0]),
-                                  color=colors[0], width=0.25)
+                                  width=0.25)
     ax.bar(X + 0.25, np.transpose(100.0 * traversed_traj_lengths[:, 1] / full_traj_lengths[:,1]),
-                                  color=colors[1], width=0.25)
+                                  width=0.25)
 
     ax.set_ylabel('Completion Percentage')
     plt.xticks(X, trajectory_names, rotation=45)
-    ax.legend(labels=METHOD_NAMES)
+    ax.legend(labels=modes)
     plt.xlabel('Trajectories')
     plt.ylabel("Completion Percentage")
 
@@ -406,16 +397,16 @@ def main():
     std_err = np.std(error_vals, axis=0);
 
     print("************************")
-    print(EVAL_PATH1.rsplit('/', 1)[-1])
-    print(METHOD_NAMES[0], ":")
+    print(EVAL_PATH.rsplit('/', 1)[-1])
+    print(modes[0], ":")
     print("mean failure# per meter travelled: ", mean_failure_per_meter[0])
     print("std failure# per meter travelled: ", std_failure_per_meter[0])
     print("mean RPE ", error_unit, ": ", mean_err[0])
     print("std RPE: ", std_err[0])
 
     print("************************")
-    print(EVAL_PATH2.rsplit('/', 1)[-1])
-    print(METHOD_NAMES[1], ":")
+    print(EVAL_PATH.rsplit('/', 1)[-1])
+    print(modes[1], ":")
     print("mean failure# per meter travelled: ", mean_failure_per_meter[1])
     print("std failure# per meter travelled: ", std_failure_per_meter[1])
     print("mean RPE ", error_unit, ": ", mean_err[1])

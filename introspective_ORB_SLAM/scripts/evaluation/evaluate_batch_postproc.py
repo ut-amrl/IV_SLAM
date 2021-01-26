@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+# Author Sadegh Rabiee
+
+
 import os, argparse
 from os.path import isfile, join
 import shutil
@@ -16,7 +21,7 @@ from numpy import linalg as LA
 
 
 # Ground truth path: Jackal_Visual_Odom Dataset
-GT_PATH = "/media/ssd2/datasets/Jackal_Visual_Odom/sequences/"
+GT_PATH = "/home/administrator/DATA/KITTI_FORMAT"
 
 # Ground truth path: Airsim Dataset
 # GT_PATH = "/media/ssd2/datasets/AirSim_IVSLAM/cityenv_wb/"
@@ -28,8 +33,7 @@ GT_PATH = "/media/ssd2/datasets/Jackal_Visual_Odom/sequences/"
 # GT_PATH = "/media/ssd2/public_datasets/EuroC/"
 
 
-
-EVAL_PATH_DEF = ("")
+EVAL_PATH_DEF = "/home/administrator/DATA/MODEL/ahg_husky/evaluate_model"
 
 EVAL_TRAJ_REL_PATH="trajectory" # includes estimated pose of keyframes
 # EVAL_TRAJ_REL_PATH="trajectory_sync" # includes synced subtrajectories for 
@@ -37,18 +41,16 @@ EVAL_TRAJ_REL_PATH="trajectory" # includes estimated pose of keyframes
 # EVAL_TRAJ_REL_PATH="trajectory_all_frames" # includes estimated pose of all frames
 
 INPUT_RESULTS_FOLDER_BASE="eval_results"
-RESULT_FILES_PREFIXES=['rot_', 'trans_']
-
-REFERENCE_TRAJ_REL_PATH="/left_cam_pose_TUM.txt" # kitti
+POSE_RELATIONS=['rot_', 'trans_']  # rot_, trans_, pose_, 
+REFERENCE_TRAJ_REL_PATH="tum/tum.txt" # kitti
 # SESSION_NAME_FORMAT="{0:02d}"
 SESSION_NAME_FORMAT="{0:05d}"
 
 # REFERENCE_TRAJ_REL_PATH="mav0/state_groundtruth_estimate0/data.tum" # euroc
 # SESSION_NAME_FORMAT="alphabetical"
 
-
-# Jackal Visual Odom
-session_idxs = [5, 6, 7, 11, 15, 18, 19, 23, 24, 29, 30, 33, 37, 40, 43]
+modes=["ORB_SLAM", "IV_SLAM"]
+session_idxs = [1,2,3]
 
 
 # AirSim
@@ -123,86 +125,89 @@ def main():
   EVAL_PATH = args.data_path
 
   print("EVAL_PATH: " + EVAL_PATH)
-  for RESULT_FILES_PREFIX in RESULT_FILES_PREFIXES:
-    INPUT_RESULTS_FOLDER = RESULT_FILES_PREFIX + INPUT_RESULTS_FOLDER_BASE
-    print('Post processing the result category: ', RESULT_FILES_PREFIX)
+  for mode in modes:
+    print("Evaluating: " + mode)
+    for k in range(len(POSE_RELATIONS)):
+      RESULT_FILES_PREFIX = POSE_RELATIONS[k]
+      INPUT_RESULTS_FOLDER = mode +"/" + INPUT_RESULTS_FOLDER_BASE + "_" + RESULT_FILES_PREFIX
+      print('Post processing the result category: ', RESULT_FILES_PREFIX)
 
-    trajectories = dict()
-    for session_id in tqdm(session_idxs):
-      if SESSION_NAME_FORMAT=="alphabetical":
-        session_id_str = session_id
-      else:
-        # session_id_str = "{0:05d}".format(session_id)
-        session_id_str = SESSION_NAME_FORMAT.format(session_id)
+      trajectories = dict()
+      for session_id in tqdm(session_idxs):
+        if SESSION_NAME_FORMAT=="alphabetical":
+          session_id_str = session_id
+        else:
+          # session_id_str = "{0:05d}".format(session_id)
+          session_id_str = SESSION_NAME_FORMAT.format(session_id)
 
-      preprocess_result_file = os.path.join(EVAL_PATH, session_id_str,
-                              INPUT_RESULTS_FOLDER,
-                              RESULT_FILES_PREFIX +'res.csv')
+        preprocess_result_file = os.path.join(EVAL_PATH, session_id_str,
+                                INPUT_RESULTS_FOLDER,
+                                RESULT_FILES_PREFIX +'res.csv')
 
-      traj_dir = os.path.join(EVAL_PATH, session_id_str, EVAL_TRAJ_REL_PATH)
+        traj_dir = os.path.join(EVAL_PATH, session_id_str, mode, EVAL_TRAJ_REL_PATH)
 
-      reference_traj = GT_PATH + '/' + session_id_str + '/' + REFERENCE_TRAJ_REL_PATH
-      full_traj_length = calc_trajectory_length(reference_traj)
+        reference_traj = GT_PATH + '/' + session_id_str + '/' + REFERENCE_TRAJ_REL_PATH
+        full_traj_length = calc_trajectory_length(reference_traj)
 
-      # Holds the names of sub trajectories that have been pruned in terms of
-      # a minimum 1.0m length during the original evaluation
-      sub_trajectories = []
-      sub_traj_names = []
-      sub_traj_ids = []
-      rmse_idx = 1
-      with open(preprocess_result_file) as csvfile:
-        prep_result = csv.reader(csvfile, delimiter=',')
-        count = 0
-        completion = 0.0
-        for row in prep_result:
-          if count == 0:
-            rmse_idx = row.index('rmse')
+        # Holds the names of sub trajectories that have been pruned in terms of
+        # a minimum 1.0m length during the original evaluation
+        sub_trajectories = []
+        sub_traj_names = []
+        sub_traj_ids = []
+        rmse_idx = 1
+        with open(preprocess_result_file) as csvfile:
+          prep_result = csv.reader(csvfile, delimiter=',')
+          count = 0
+          completion = 0.0
+          for row in prep_result:
+            if count == 0:
+              rmse_idx = row.index('rmse')
 
+              count += 1
+              continue
+
+            sub_traj_names += [row[0]]
+            sub_traj_ids += [row[0][-3:]]
+            rmse = float(row[rmse_idx])
+
+            sub_traj_file_path = os.path.join(traj_dir, sub_traj_names[-1])
+            # sub_traj_length = calc_trajectory_length(sub_traj_file_path)
+            sub_traj_length = get_gt_length(sub_traj_file_path, reference_traj)
+
+            # print(100 * sub_traj_length/ full_traj_length, "\% ")
+            completion += 100 * sub_traj_length/ full_traj_length
+
+            sub_trajectory = {'rmse': rmse,
+                              'length': sub_traj_length}
+            sub_trajectories += [sub_trajectory]
             count += 1
-            continue
 
-          sub_traj_names += [row[0]]
-          sub_traj_ids += [row[0][-3:]]
-          rmse = float(row[rmse_idx])
+          print("Completed: ", completion)
+          trajectory = dict()
+          # Calculate the mean error for the whole trajectory. It is calculated
+          # as a weighted mean of the error of subtrajectories (weighted by length)
+          rmse_total_squared = np.array([0.0])
+          traversed_length = 0.0
+          for i in range(len(sub_trajectories)):
+            sub_trajectory = sub_trajectories[i]
+            rmse = sub_trajectory['rmse']
+            length = sub_trajectory['length']
+            rmse_total_squared = rmse* rmse * length  + rmse_total_squared
 
-          sub_traj_file_path = os.path.join(traj_dir, sub_traj_names[-1]+'.txt')
-          # sub_traj_length = calc_trajectory_length(sub_traj_file_path)
-          sub_traj_length = get_gt_length(sub_traj_file_path, reference_traj)
+            traversed_length += length
+            trajectory[sub_traj_ids[i]] = sub_trajectory
 
-          # print(100 * sub_traj_length/ full_traj_length, "\% ")
-          completion += 100 * sub_traj_length/ full_traj_length
+          trajectory['rmse'] = math.sqrt(rmse_total_squared / traversed_length)
+          trajectory['failure_count'] = len(sub_trajectories)
+          trajectory['traversed_length'] = traversed_length
+          trajectory['total_length'] = full_traj_length
+          trajectories[session_id] = trajectory
 
-          sub_trajectory = {'rmse': rmse,
-                            'length': sub_traj_length}
-          sub_trajectories += [sub_trajectory]
-          count += 1
-
-        print("Completed: ", completion)
-        trajectory = dict()
-        # Calculate the mean error for the whole trajectory. It is calculated
-        # as a weighted mean of the error of subtrajectories (weighted by length)
-        rmse_total_squared = np.array([0.0])
-        traversed_length = 0.0
-        for i in range(len(sub_trajectories)):
-          sub_trajectory = sub_trajectories[i]
-          rmse = sub_trajectory['rmse']
-          length = sub_trajectory['length']
-          rmse_total_squared = rmse* rmse * length  + rmse_total_squared
-
-          traversed_length += length
-          trajectory[sub_traj_ids[i]] = sub_trajectory
-
-        trajectory['rmse'] = math.sqrt(rmse_total_squared / traversed_length)
-        trajectory['failure_count'] = len(sub_trajectories)
-        trajectory['traversed_length'] = traversed_length
-        trajectory['total_length'] = full_traj_length
-        trajectories[session_id] = trajectory
-
-    # Save the results for current SLAM algorithm to file
-    result_file_path = os.path.join(EVAL_PATH,
-                                    RESULT_FILES_PREFIX + 'eval_results.json')
-    with open(result_file_path, 'w') as outfile:
-      json.dump(trajectories, outfile)
+      # Save the results for current SLAM algorithm to file
+      result_file_path = os.path.join(EVAL_PATH,
+                                      mode +"_"+ RESULT_FILES_PREFIX + 'eval_results.json')
+      with open(result_file_path, 'w') as outfile:
+        json.dump(trajectories, outfile)
 
 if __name__=="__main__":
   main()
