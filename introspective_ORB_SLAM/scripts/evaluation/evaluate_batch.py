@@ -52,8 +52,7 @@ DELTA = 2.0 # meters distance of consecutive evaluation points
              # 20.0m for AirSim
              # 1.0m for EuRoC
 
-MODE="ORB_SLAM"
-EVAL_TRAJ_REL_PATH=MODE+"/trajectory" # includes estimated pose of keyframes
+EVAL_TRAJ_REL_PATH="trajectory" # includes estimated pose of keyframes
 # EVAL_TRAJ_REL_PATH="trajectory_sync" # includes synced subtrajectories for 
                               # multiple methods
 # EVAL_TRAJ_REL_PATH="trajectory_all_frames" # includes estimated pose of all frames
@@ -66,6 +65,7 @@ SESSION_NAME_FORMAT="{0:05d}"
 # SESSION_NAME_FORMAT="alphabetical"
 
 # ahg_husky
+modes=["ORB_SLAM", "IV_SLAM"]
 session_idxs = [1,2,3]
 
 
@@ -143,90 +143,92 @@ def main():
   EVAL_PATH = args.data_path
 
   print("EVAL_PATH: " + EVAL_PATH)
-  for k in range(len(POSE_RELATIONS)):
-    RESULT_FILES_PREFIX = POSE_RELATIONS[k]
-    CONFIG_FILE = CONFIG_FILES[k]
-    RESULTS_FOLDER = MODE +"/" + RESULTS_FOLDER_BASE + "_" + RESULT_FILES_PREFIX
-    print("Evaluating trajectories with the pose relation metric: ", 
-          RESULT_FILES_PREFIX)
+  for mode in modes:
+    print("Evaluating: " + mode)
+    for k in range(len(POSE_RELATIONS)):
+      RESULT_FILES_PREFIX = POSE_RELATIONS[k]
+      CONFIG_FILE = CONFIG_FILES[k]
+      RESULTS_FOLDER = mode +"/" + RESULTS_FOLDER_BASE + "_" + RESULT_FILES_PREFIX
+      print("Evaluating trajectories with the pose relation metric: ", 
+            RESULT_FILES_PREFIX)
 
-    for session_id in tqdm(session_idxs):
-      if SESSION_NAME_FORMAT=="alphabetical":
-        session_id_str = session_id
-      else:
-        # session_id_str = "{0:05d}".format(session_id)
-        session_id_str = SESSION_NAME_FORMAT.format(session_id)
+      for session_id in tqdm(session_idxs):
+        if SESSION_NAME_FORMAT=="alphabetical":
+          session_id_str = session_id
+        else:
+          # session_id_str = "{0:05d}".format(session_id)
+          session_id_str = SESSION_NAME_FORMAT.format(session_id)
 
-      reference_traj = GT_PATH + '/' + session_id_str + '/'+ REFERENCE_TRAJ_REL_PATH
+        reference_traj = GT_PATH + '/' + session_id_str + '/'+ REFERENCE_TRAJ_REL_PATH
 
-      test_traj_dir = EVAL_PATH + '/' + session_id_str + '/' + EVAL_TRAJ_REL_PATH
+        test_traj_dir = EVAL_PATH + '/' + session_id_str + '/' + mode + "/" + EVAL_TRAJ_REL_PATH
 
-      sub_traj_files = [f for f in os.listdir(test_traj_dir) if isfile(join(test_traj_dir, f))]
+        sub_traj_files = [f for f in os.listdir(test_traj_dir) if isfile(join(test_traj_dir, f))]
 
-      eval_result_path = os.path.join(EVAL_PATH, session_id_str, RESULTS_FOLDER)
+        eval_result_path = os.path.join(EVAL_PATH, session_id_str, RESULTS_FOLDER)
 
-      # Prepare the directory for saving results. Remove old directories
-      if not os.path.exists(eval_result_path):
-        os.makedirs(eval_result_path)
-      else:
-        shutil.rmtree(eval_result_path)
-        os.makedirs(eval_result_path)
+        # Prepare the directory for saving results. Remove old directories
+        if not os.path.exists(eval_result_path):
+          os.makedirs(eval_result_path)
+        else:
+          shutil.rmtree(eval_result_path)
+          os.makedirs(eval_result_path)
 
-      sub_traj_ids = []
-      for sub_traj in sub_traj_files:
-        sub_traj_path = test_traj_dir + '/' + sub_traj
-        sub_traj_id = sub_traj[-7:-4]
+        sub_traj_ids = []
+        for sub_traj in sub_traj_files:
+          sub_traj_path = test_traj_dir + '/' + sub_traj
+          sub_traj_id = sub_traj[-7:-4]
 
-        # Check if the sub trajectory is long enough
-        # traj_length = calc_trajectory_length(sub_traj_path)
-        traj_length = get_gt_length(sub_traj_path, reference_traj)
+          # Check if the sub trajectory is long enough
+          # traj_length = calc_trajectory_length(sub_traj_path)
+          traj_length = get_gt_length(sub_traj_path, reference_traj)
 
-        if traj_length < 1.3:
-          print('Trajectory ' , session_id , ":" ,sub_traj_id
-                , ' was too short. Skipping ...')
-          continue
+          if traj_length < 1.3:
+            print('Trajectory ' , session_id , ":" ,sub_traj_id
+                  , ' was too short. Skipping ...')
+            continue
 
-        result_file_path = os.path.join(eval_result_path,
-                                        RESULT_FILES_PREFIX+ sub_traj_id+'.zip')
+          result_file_path = os.path.join(eval_result_path,
+                                          RESULT_FILES_PREFIX+ sub_traj_id+'.zip')
+          result_fig_path = os.path.join(eval_result_path,
+                                          RESULT_FILES_PREFIX+ sub_traj_id + '.pdf')
+
+          cmd = [EVALUATION_METHOD, 'tum']
+          cmd += [reference_traj]
+          cmd += [sub_traj_path]
+          cmd += ['--delta=' + str(DELTA)]
+          cmd += ['--config=' + CONFIG_FILE]
+          cmd += ['--save_results', result_file_path]
+          cmd += ['--save_plot', result_fig_path]
+
+          try:
+            subprocess.run(cmd, check=True,
+                                  stdout=subprocess.PIPE, universal_newlines=True)
+          except subprocess.CalledProcessError as e:
+            print(e.output)
+            print("Skipping ", session_id_str, ":", sub_traj)
+            continue
+            
+          sub_traj_ids += [sub_traj_id]
+
+
+        result_table_path = os.path.join(eval_result_path,
+                                        RESULT_FILES_PREFIX+ 'res' + '.csv')
         result_fig_path = os.path.join(eval_result_path,
-                                        RESULT_FILES_PREFIX+ sub_traj_id + '.pdf')
+                                        RESULT_FILES_PREFIX +'res' + '.pdf')
+        res_zip_files = [os.path.join(eval_result_path,
+                                      RESULT_FILES_PREFIX + idx + '.zip') for
+                        idx in sub_traj_ids]
 
-        cmd = [EVALUATION_METHOD, 'tum']
-        cmd += [reference_traj]
-        cmd += [sub_traj_path]
-        cmd += ['--delta=' + str(DELTA)]
-        cmd += ['--config=' + CONFIG_FILE]
-        cmd += ['--save_results', result_file_path]
-        cmd += ['--save_plot', result_fig_path]
-
+        cmd2 = ['evo_res']
+        cmd2 += res_zip_files
+        cmd2 += ['--save_table', result_table_path]
+        cmd2 += ['--save_plot', result_fig_path]
         try:
-          subprocess.run(cmd, check=True,
+          subprocess.run(cmd2, check=True,
                                 stdout=subprocess.PIPE, universal_newlines=True)
         except subprocess.CalledProcessError as e:
           print(e.output)
-          print("Skipping ", session_id_str, ":", sub_traj)
-          continue
-          
-        sub_traj_ids += [sub_traj_id]
-
-
-      result_table_path = os.path.join(eval_result_path,
-                                      RESULT_FILES_PREFIX+ 'res' + '.csv')
-      result_fig_path = os.path.join(eval_result_path,
-                                      RESULT_FILES_PREFIX +'res' + '.pdf')
-      res_zip_files = [os.path.join(eval_result_path,
-                                    RESULT_FILES_PREFIX + idx + '.zip') for
-                      idx in sub_traj_ids]
-
-      cmd2 = ['evo_res']
-      cmd2 += res_zip_files
-      cmd2 += ['--save_table', result_table_path]
-      cmd2 += ['--save_plot', result_fig_path]
-      try:
-        subprocess.run(cmd2, check=True,
-                              stdout=subprocess.PIPE, universal_newlines=True)
-      except subprocess.CalledProcessError as e:
-        print(e.output)
 
 if __name__=="__main__":
   main()
