@@ -15,7 +15,7 @@ from numpy import linalg as LA
 # runs evaluations for each. Aggragated results are saved for each session.
 
 # Ground truth path: Jackal_Visual_Odom Dataset
-GT_PATH = "/home/administrator/DATA/KITTI_FORMAT/00001/sequences"
+GT_PATH = "/home/administrator/DATA/KITTI_FORMAT"
 
 # Ground truth path: Airsim Dataset
 # GT_PATH = "/media/ssd2/datasets/AirSim_IVSLAM/cityenv_wb/"
@@ -27,7 +27,7 @@ GT_PATH = "/home/administrator/DATA/KITTI_FORMAT/00001/sequences"
 # GT_PATH = "/media/ssd2/public_datasets/EuroC/"
 
 
-EVAL_PATH_DEF = ("")
+EVAL_PATH_DEF = "/home/administrator/DATA/MODEL/ahg_husky/evaluate_model"
 
 # **********************
 # ***** Config Files ***
@@ -42,29 +42,30 @@ EVAL_PATH_DEF = ("")
 
 # Stereo *******
 RESULTS_FOLDER_BASE="eval_results"
-CONFIG_FILES=['rpe_withSE3Align_config_rotOnly.json',
-              'rpe_withSE3Align_config_transOnly.json']
+CONFIG_FILES=['config/rpe_withSE3Align_config_rotOnly.json',
+              'config/rpe_withSE3Align_config_transOnly.json']
 POSE_RELATIONS=['rot_', 'trans_']  # rot_, trans_, pose_, 
                                   # rot_ape_, trans_ape_ , pose_ape_
 EVALUATION_METHOD = 'evo_rpe' # 'evo_rpe', 'evo_ape'
-DELTA = 20.0 # meters distance of consecutive evaluation points 
+DELTA = 2.0 # meters distance of consecutive evaluation points 
              # 2.0m for jackal
              # 20.0m for AirSim
              # 1.0m for EuRoC
 
-EVAL_TRAJ_REL_PATH="trajectory" # includes estimated pose of keyframes
+MODE="ORB_SLAM"
+EVAL_TRAJ_REL_PATH=MODE+"/trajectory" # includes estimated pose of keyframes
 # EVAL_TRAJ_REL_PATH="trajectory_sync" # includes synced subtrajectories for 
                               # multiple methods
 # EVAL_TRAJ_REL_PATH="trajectory_all_frames" # includes estimated pose of all frames
 
-REFERENCE_TRAJ_REL_PATH="/left_cam_pose_TUM.txt" # kitti
+REFERENCE_TRAJ_REL_PATH="tum/tum.txt" # 
 # SESSION_NAME_FORMAT="{0:02d}"
 SESSION_NAME_FORMAT="{0:05d}"
 
 # REFERENCE_TRAJ_REL_PATH="mav0/state_groundtruth_estimate0/data_LCamFrame.tum" # euroc
 # SESSION_NAME_FORMAT="alphabetical"
 
-# Jackal Visual Odom
+# ahg_husky
 session_idxs = [1,2,3]
 
 
@@ -145,7 +146,7 @@ def main():
   for k in range(len(POSE_RELATIONS)):
     RESULT_FILES_PREFIX = POSE_RELATIONS[k]
     CONFIG_FILE = CONFIG_FILES[k]
-    RESULTS_FOLDER = RESULT_FILES_PREFIX + RESULTS_FOLDER_BASE
+    RESULTS_FOLDER = MODE +"/" + RESULTS_FOLDER_BASE + "_" + RESULT_FILES_PREFIX
     print("Evaluating trajectories with the pose relation metric: ", 
           RESULT_FILES_PREFIX)
 
@@ -185,10 +186,6 @@ def main():
                 , ' was too short. Skipping ...')
           continue
 
-        # print("Session: ", session_id_str)
-        # print("Subsession: ", sub_traj)
-        # print("traj length: ", traj_length)
-
         result_file_path = os.path.join(eval_result_path,
                                         RESULT_FILES_PREFIX+ sub_traj_id+'.zip')
         result_fig_path = os.path.join(eval_result_path,
@@ -212,12 +209,11 @@ def main():
           
         sub_traj_ids += [sub_traj_id]
 
+
       result_table_path = os.path.join(eval_result_path,
                                       RESULT_FILES_PREFIX+ 'res' + '.csv')
       result_fig_path = os.path.join(eval_result_path,
                                       RESULT_FILES_PREFIX +'res' + '.pdf')
-
-
       res_zip_files = [os.path.join(eval_result_path,
                                     RESULT_FILES_PREFIX + idx + '.zip') for
                       idx in sub_traj_ids]
