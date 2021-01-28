@@ -1,6 +1,6 @@
 DATASET:
   num_class: 1
-  root: "../../../introspective_ORB_SLAM/scripts/generated_training_data/"
+  root: "../../../introspective_ORB_SLAM/scripts/generated_training_data"
   raw_img_root: "../../../Jackal_Visual_Odom/sequences"
   raw_img_folder: "image_0"
   train_set: "train_jackal_t"
@@ -48,8 +48,8 @@ TEST:
   save_raw_output: True
   output_img_width : 960
   output_img_height : 600
-  test_model_encoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_decoder_last_model_0030.pth"
-  test_model_decoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_encoder_last_model_0030.pth"
+  test_model_encoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_encoder_last_model_0004.pth"
+  test_model_decoder : "../../pretrained/ivslam_introspection_func/snapshots/ivslam_introspection_func_decoder_last_model_0004.pth"
   use_gpu : True
   batch_size_per_gpu : 50
   batch_size: 5

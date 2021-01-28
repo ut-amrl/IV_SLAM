@@ -32,14 +32,7 @@ SOURCE_DATASET_BASE_DIR=\
 
 INTROSPECTION_MODEL_PATH=""
 
-TARGET_RESULT_BASE_DIR="results/"
-
-TARGET_DATASET_BASE_DIR="generated_training_data/"
-
 PREDICTED_IMAGE_QUAL_BASE_DIR=""
-
-mkdir -p $TARGET_RESULT_BASE_DIR
-mkdir -p $TARGET_DATASET_BASE_DIR
 
 
 SEQUENCE_PATH=$SOURCE_DATASET_BASE_DIR/"sequences"
@@ -52,8 +45,16 @@ for session in $SESSIONS; do
   echo "*********************************"
   echo "Running on $SESSION_NUM_STR"
   echo "*********************************"
- 
   
+
+  TARGET_RESULT_BASE_DIR="results/"
+
+  TARGET_DATASET_BASE_DIR="generated_training_data"/$SESSION_NUM_STR/"generated_training_data/" 
+  
+  mkdir -p $TARGET_RESULT_BASE_DIR
+  mkdir -p $TARGET_DATASET_BASE_DIR
+
+
   PREDICTED_IMAGE_QUAL_FOLDER=\
   $PREDICTED_IMAGE_QUAL_BASE_DIR/$SESSION_NUM_STR/
 
@@ -69,7 +70,7 @@ for session in $SESSIONS; do
   --img_qual_path=$PREDICTED_IMAGE_QUAL_FOLDER \
   --introspection_model_path=$INTROSPECTION_MODEL_PATH \
   --out_visualization_path=$TARGET_RESULT_BASE_DIR/$SESSION_NUM_STR/ \
-  --out_dataset_path=$TARGET_DATASET_BASE_DIR/$SESSION_NUM_STR/ \
+  --out_dataset_path=$TARGET_DATASET_BASE_DIR\
   --rel_pose_uncertainty_path=$REL_POSE_UNC_PATH \
   --start_frame=$START_FRAME \
   --introspection_func_enabled=$INTROSPECTION_FUNCTION_ENABLED \
