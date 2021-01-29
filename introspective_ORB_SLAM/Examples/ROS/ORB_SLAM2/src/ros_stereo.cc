@@ -162,11 +162,9 @@ int main(int argc, char** argv) {
   FLAGS_stderrthreshold = 2;   // ERROR level logging.
   FLAGS_colorlogtostderr = 1;  // Colored logging.
   FLAGS_logtostderr = true;    // Don't log to disk
-  cout << "HERE1\n";
 
-  ros::init(argc, argv, "RGBD");
+  ros::init(argc, argv, "stereo");
   ros::start();
-  cout << "HERE2\n";
 
   string usage(
       "This program runs stereo ORB-SLAM on KITTI format "
@@ -175,25 +173,25 @@ int main(int argc, char** argv) {
 
   usage += string(argv[0]) + " <argument1> <argument2> ...";
   gflags::SetUsageMessage(usage);
-  cout << "HERE3\n";
+
   gflags::ParseCommandLineNonHelpFlags(&argc, &argv, true);
   if (FLAGS_help) {
     gflags::ShowUsageWithFlagsRestrict(argv[0], "stereo_kitti");
     return 0;
   }
-  cout << "HERE4\n";
+
   CheckCommandLineArgs(argv);
-  cout << "HERE5\n";
+
   if (!FLAGS_gt_pose_available && FLAGS_ivslam_enabled &&
       !FLAGS_inference_mode) {
     LOG(FATAL) << "Ground truth camera poses are required in training mode.";
   }
-  cout << "HERE6\n";
+
   if (!FLAGS_gt_pose_available && FLAGS_map_drawer_visualize_gt_pose) {
     LOG(FATAL) << "Ground truth camera poses are not available but their "
                << "visualization is requested!";
   }
-  cout << "HERE7\n";
+
   // Create SLAM system. It initializes all system threads and gets ready to
   // process frames.
   bool use_BoW = true;
@@ -213,45 +211,66 @@ int main(int argc, char** argv) {
                          FLAGS_out_dataset_path,
                          silent_mode,
                          guided_ba);
-cout << "HERE8\n";
+
   ImageGrabber igb(&SLAM);
 
-  stringstream ss(argv[3]);
-  ss >> boolalpha >> igb.do_rectify;
+  // Read undistortion/rectification parameters
+  cv::FileStorage fsSettings(FLAGS_settings_path, cv::FileStorage::READ);
+  if (!fsSettings.isOpened()) {
+    cerr << "ERROR: Wrong path to settings" << endl;
+    return -1;
+  }
 
-  if (igb.do_rectify) {
-    // Load settings related to stereo calibration
-    cv::FileStorage fsSettings(argv[2], cv::FileStorage::READ);
-    if (!fsSettings.isOpened()) {
-      cerr << "ERROR: Wrong path to settings" << endl;
-      return -1;
-    }
+  cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
+  fsSettings["LEFT.K"] >> K_l;
+  fsSettings["RIGHT.K"] >> K_r;
 
-    cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
-    fsSettings["LEFT.K"] >> K_l;
-    fsSettings["RIGHT.K"] >> K_r;
+  fsSettings["LEFT.P"] >> P_l;
+  fsSettings["RIGHT.P"] >> P_r;
 
-    fsSettings["LEFT.P"] >> P_l;
-    fsSettings["RIGHT.P"] >> P_r;
+  fsSettings["LEFT.R"] >> R_l;
+  fsSettings["RIGHT.R"] >> R_r;
 
-    fsSettings["LEFT.R"] >> R_l;
-    fsSettings["RIGHT.R"] >> R_r;
+  fsSettings["LEFT.D"] >> D_l;
+  fsSettings["RIGHT.D"] >> D_r;
 
-    fsSettings["LEFT.D"] >> D_l;
-    fsSettings["RIGHT.D"] >> D_r;
+  int rows_l = fsSettings["LEFT.height"];
+  int cols_l = fsSettings["LEFT.width"];
+  int rows_r = fsSettings["RIGHT.height"];
+  int cols_r = fsSettings["RIGHT.width"];
 
-    int rows_l = fsSettings["LEFT.height"];
-    int cols_l = fsSettings["LEFT.width"];
-    int rows_r = fsSettings["RIGHT.height"];
-    int cols_r = fsSettings["RIGHT.width"];
-
+  if (FLAGS_rectify_images || FLAGS_undistort_images) {
     if (K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() ||
         R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty() ||
         rows_l == 0 || rows_r == 0 || cols_l == 0 || cols_r == 0) {
-      cerr << "ERROR: Calibration parameters to rectify stereo are missing!"
+      cerr << "ERROR: Calibration parameters to undistort/rectify stereo are "
+              "missing!"
            << endl;
       return -1;
     }
+  }
+
+  cv::Mat M1l, M2l, M1r, M2r;
+  if (FLAGS_rectify_images && FLAGS_undistort_images) {
+    cv::initUndistortRectifyMap(K_l,
+                                D_l,
+                                R_l,
+                                P_l.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_l, rows_l),
+                                CV_32F,
+                                igb.M1l,
+                                igb.M2l);
+    cv::initUndistortRectifyMap(K_r,
+                                D_r,
+                                R_r,
+                                P_r.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_r, rows_r),
+                                CV_32F,
+                                igb.M1r,
+                                igb.M2r);
+  } else if (FLAGS_rectify_images) {
+    D_l = cv::Mat::zeros(1, 4, CV_32F);
+    D_r = cv::Mat::zeros(1, 4, CV_32F);
 
     cv::initUndistortRectifyMap(K_l,
                                 D_l,
@@ -269,14 +288,34 @@ cout << "HERE8\n";
                                 CV_32F,
                                 igb.M1r,
                                 igb.M2r);
+  } else if (FLAGS_undistort_images) {
+    R_l = cv::Mat::eye(3, 3, CV_32F);
+    R_r = cv::Mat::eye(3, 3, CV_32F);
+    cv::initUndistortRectifyMap(K_l,
+                                D_l,
+                                R_l,
+                                P_l.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_l, rows_l),
+                                CV_32F,
+                                igb.M1l,
+                                igb.M2l);
+
+    cv::initUndistortRectifyMap(K_r,
+                                D_r,
+                                R_r,
+                                P_r.rowRange(0, 3).colRange(0, 3),
+                                cv::Size(cols_r, rows_r),
+                                CV_32F,
+                                igb.M1r,
+                                igb.M2r);
   }
 
   ros::NodeHandle nh;
 
   message_filters::Subscriber<sensor_msgs::Image> left_sub(
-      nh, "/camera/left/image_raw", 1);
+      nh, "/stereo/left/image_raw", 1);
   message_filters::Subscriber<sensor_msgs::Image> right_sub(
-      nh, "camera/right/image_raw", 1);
+      nh, "/stereo/right/image_raw", 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
                                                           sensor_msgs::Image>
       sync_pol;
