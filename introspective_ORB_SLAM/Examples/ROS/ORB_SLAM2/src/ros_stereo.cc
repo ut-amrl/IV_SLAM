@@ -127,6 +127,24 @@ DECLARE_bool(helpshort);
 
 using namespace std;
 
+// Checks if all required command line arguments have been set
+void CheckCommandLineArgs(char** argv) {
+  vector<string> required_args = {"vocab_path",
+                                  "settings_path",
+                                  "data_path",
+                                  "out_visualization_path",
+                                  "out_dataset_path"};
+
+  for (const string& arg_name : required_args) {
+    bool flag_not_set =
+        gflags::GetCommandLineFlagInfoOrDie(arg_name.c_str()).is_default;
+    if (flag_not_set) {
+      gflags::ShowUsageWithFlagsRestrict(argv[0], "stereo_kitti_opt");
+      LOG(FATAL) << arg_name << " was not set." << endl;
+    }
+  }
+}
+
 class ImageGrabber {
  public:
   ImageGrabber(ORB_SLAM2::System* pSLAM) : mpSLAM(pSLAM) {}
@@ -140,22 +158,62 @@ class ImageGrabber {
 };
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  FLAGS_stderrthreshold = 2;   // ERROR level logging.
+  FLAGS_colorlogtostderr = 1;  // Colored logging.
+  FLAGS_logtostderr = true;    // Don't log to disk
+  cout << "HERE1\n";
+
   ros::init(argc, argv, "RGBD");
   ros::start();
+  cout << "HERE2\n";
 
-  if (argc != 4) {
-    cerr << endl
-         << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary "
-            "path_to_settings do_rectify"
-         << endl;
-    ros::shutdown();
-    return 1;
+  string usage(
+      "This program runs stereo ORB-SLAM on KITTI format "
+      "data with the option to run with IV-SLAM in inference mode "
+      "or generate training data for it. \n");
+
+  usage += string(argv[0]) + " <argument1> <argument2> ...";
+  gflags::SetUsageMessage(usage);
+  cout << "HERE3\n";
+  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, true);
+  if (FLAGS_help) {
+    gflags::ShowUsageWithFlagsRestrict(argv[0], "stereo_kitti");
+    return 0;
   }
-
+  cout << "HERE4\n";
+  CheckCommandLineArgs(argv);
+  cout << "HERE5\n";
+  if (!FLAGS_gt_pose_available && FLAGS_ivslam_enabled &&
+      !FLAGS_inference_mode) {
+    LOG(FATAL) << "Ground truth camera poses are required in training mode.";
+  }
+  cout << "HERE6\n";
+  if (!FLAGS_gt_pose_available && FLAGS_map_drawer_visualize_gt_pose) {
+    LOG(FATAL) << "Ground truth camera poses are not available but their "
+               << "visualization is requested!";
+  }
+  cout << "HERE7\n";
   // Create SLAM system. It initializes all system threads and gets ready to
   // process frames.
-  ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::STEREO, true);
-
+  bool use_BoW = true;
+  bool silent_mode = false;
+  bool guided_ba = false;
+  ORB_SLAM2::System SLAM(FLAGS_vocab_path,
+                         FLAGS_settings_path,
+                         ORB_SLAM2::System::STEREO,
+                         FLAGS_enable_viewer,
+                         FLAGS_ivslam_enabled,
+                         FLAGS_inference_mode,
+                         FLAGS_minloglevel,
+                         FLAGS_create_ivslam_dataset,
+                         FLAGS_run_single_threaded,
+                         use_BoW,
+                         FLAGS_out_visualization_path,
+                         FLAGS_out_dataset_path,
+                         silent_mode,
+                         guided_ba);
+cout << "HERE8\n";
   ImageGrabber igb(&SLAM);
 
   stringstream ss(argv[3]);
