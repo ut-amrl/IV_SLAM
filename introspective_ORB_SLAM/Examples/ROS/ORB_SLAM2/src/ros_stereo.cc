@@ -153,7 +153,7 @@ class ImageGrabber {
                   const sensor_msgs::ImageConstPtr& msgRight);
 
   ORB_SLAM2::System* mpSLAM;
-  bool do_rectify;
+  bool do_process;
   cv::Mat M1l, M2l, M1r, M2r;
 };
 
@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
                          guided_ba);
 
   ImageGrabber igb(&SLAM);
-
+  igb.do_process = true;
   // Read undistortion/rectification parameters
   cv::FileStorage fsSettings(FLAGS_settings_path, cv::FileStorage::READ);
   if (!fsSettings.isOpened()) {
@@ -357,7 +357,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     return;
   }
 
-  if (do_rectify) {
+  if (do_process) {
     cv::Mat imLeft, imRight;
     cv::remap(cv_ptrLeft->image, imLeft, M1l, M2l, cv::INTER_LINEAR);
     cv::remap(cv_ptrRight->image, imRight, M1r, M2r, cv::INTER_LINEAR);
