@@ -18,6 +18,7 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <gflags/gflags.h>
 
 #include<iostream>
 #include<algorithm>
@@ -33,6 +34,100 @@
 #include<opencv2/core/core.hpp>
 
 #include"../../../include/System.h"
+
+
+// Command line flags flag
+DEFINE_string(vocab_path, "", "Path to ORB vocabulary.");
+
+DEFINE_string(settings_path, "", "Path to ORB-SLAM config file.");
+
+DEFINE_string(data_path, "", "Path to the source dataset.");
+
+DEFINE_string(ground_truth_path, "", "Path to ground truth poses.");
+
+DEFINE_string(img_qual_path,
+              "",
+              "Path to quality images for feature "
+              "extraction/matching. Higher values of a pixel indicate lower "
+              "reliability of the features extracted from that pixel in the "
+              "image.");
+
+DEFINE_string(introspection_model_path,
+              "",
+              "Path to the trained model "
+              "of the introspection function.");
+
+DEFINE_string(out_visualization_path,
+              "",
+              "Output path for visualization "
+              "results.");
+
+DEFINE_string(out_dataset_path, "", "Output path for generated dataset.");
+
+DEFINE_string(rel_pose_uncertainty_path,
+              "",
+              "Path to relative camera pose "
+              "uncertainty values.");
+
+DEFINE_int32(start_frame, 0, "Start frame ID.");
+
+DEFINE_int32(end_frame, -1, "End frame ID.");
+
+// If set to true, the estimated camera pose uncertainty values are loaded
+// and passed to IV-SLAM
+DEFINE_bool(load_rel_pose_uncertainty,
+            false,
+            "Loads relative camera pose "
+            "uncertainty values from file.");
+
+DEFINE_bool(load_img_qual_heatmaps,
+            false,
+            "Loads predicted image quality "
+            "heatmpas from file.");
+
+DEFINE_bool(run_single_threaded, false, "Runs in single threaded mode.");
+
+DEFINE_bool(create_ivslam_dataset,
+            false,
+            "Saves to file the dataset for "
+            "training the introspection model.");
+
+DEFINE_bool(ivslam_enabled,
+            false,
+            "Enables IV-SLAM. The program will run "
+            "in trainig mode unless the inference_mode flag is set.");
+
+DEFINE_bool(inference_mode, false, "Enables the inference mode.");
+
+DEFINE_bool(introspection_func_enabled,
+            false,
+            "Enables the introspection function.");
+
+DEFINE_bool(enable_viewer, true, "Enables the viewer.");
+
+DEFINE_bool(gt_pose_available,
+            true,
+            "If set to true, loads the ground truth "
+            "camera poses for either visualizatio or training. This must be "
+            "true in training mode or if FLAGS_map_drawer_visualize_gt_pose "
+            "is set.");
+
+DEFINE_bool(use_gpu, false, "Uses GPU for running the introspection function.");
+
+DEFINE_bool(rectify_images,
+            false,
+            "Set to true, if input images need "
+            "to be rectified.");
+
+DEFINE_bool(undistort_images,
+            false,
+            "Set to true, if input images need "
+            "to be undistorted.");
+
+DECLARE_bool(help);
+
+DECLARE_bool(helpshort);
+
 
 using namespace std;
 
