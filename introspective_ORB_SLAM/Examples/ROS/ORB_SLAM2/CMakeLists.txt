@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
-rosbuild_init()
+project(ORB_SLAM2)
 
 IF(NOT ROS_BUILD_TYPE)
   SET(ROS_BUILD_TYPE Release)
@@ -44,11 +42,20 @@ endif()
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 
+FIND_PACKAGE(roscpp REQUIRED)
+FIND_PACKAGE(roslib REQUIRED)
+FIND_PACKAGE(cv_bridge REQUIRED)
+FIND_PACKAGE(message_filters REQUIRED)
+
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
 ${PROJECT_SOURCE_DIR}/../../../include
 ${Pangolin_INCLUDE_DIRS}
+${roscpp_INCLUDE_DIRS}
+${roslib_INCLUDE_DIRS}
+${cv_bridge_INCLUDE_DIRS}
+${message_filters_INCLUDE_DIRS}
 )
 
 set(LIBS 
@@ -61,10 +68,14 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
 -lboost_system
 gflags
 glog
+${roscpp_LIBRARIES} 
+${roslib_LIBRARIES}
+${cv_bridge_LIBRARIES}
+${message_filters_LIBRARIES}
 )
 
 # Node for monocular camera
-rosbuild_add_executable(Mono
+add_executable(Mono
 src/ros_mono.cc
 )
 
@@ -73,7 +84,7 @@ ${LIBS}
 )
 
 # Node for monocular camera (Augmented Reality Demo)
-rosbuild_add_executable(MonoAR
+add_executable(MonoAR
 src/AR/ros_mono_ar.cc
 src/AR/ViewerAR.h
 src/AR/ViewerAR.cc
@@ -84,7 +95,7 @@ ${LIBS}
 )
 
 # Node for stereo camera
-rosbuild_add_executable(Stereo
+add_executable(Stereo
 src/ros_stereo.cc
 )
 
@@ -93,7 +104,7 @@ ${LIBS}
 )
 
 # Node for RGB-D camera
-rosbuild_add_executable(RGBD
+add_executable(RGBD
 src/ros_rgbd.cc
 )
 
