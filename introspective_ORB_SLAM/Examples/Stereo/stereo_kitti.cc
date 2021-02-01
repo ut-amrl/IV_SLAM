@@ -491,7 +491,7 @@ int main(int argc, char **argv) {
         }
       } else {
         // Run inference on the introspection model online
-        cv::Mat imLeft_RGB = imLeft;
+        cv::Mat imLeft_RGB = imLeft;  //TODO initializae imLeft_RGB as blank instead of imLeft
         cv::cvtColor(imLeft_RGB, imLeft_RGB, CV_BGR2RGB);
 
         // Convert to float and normalize image

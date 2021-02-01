@@ -24,6 +24,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
 #include <ros/ros.h>
+#include <torch/script.h>
+#include <torch/torch.h>
 
 #include <algorithm>
 #include <chrono>
@@ -190,6 +192,24 @@ int main(int argc, char** argv) {
   if (!FLAGS_gt_pose_available && FLAGS_map_drawer_visualize_gt_pose) {
     LOG(FATAL) << "Ground truth camera poses are not available but their "
                << "visualization is requested!";
+  }
+
+  torch::jit::script::Module introspection_func;
+  torch::Device device = torch::kCPU;
+  if (FLAGS_introspection_func_enabled && !FLAGS_load_img_qual_heatmaps) {
+    try {
+      // Deserialize the ScriptModule from file
+      introspection_func = torch::jit::load(FLAGS_introspection_model_path);
+
+      if (FLAGS_use_gpu && torch::cuda::is_available()) {
+        std::cout << "Introspection function running on GPU." << std::endl;
+        device = torch::kCUDA;
+      }
+      introspection_func.to(device);
+    } catch (const c10::Error &e) {
+      std::cerr << "error loading the introspection model\n";
+      return -1;
+    }
   }
 
   // Create SLAM system. It initializes all system threads and gets ready to
@@ -367,4 +387,6 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                         cv_ptrRight->image,
                         cv_ptrLeft->header.stamp.toSec());
   }
+
+  
 }
