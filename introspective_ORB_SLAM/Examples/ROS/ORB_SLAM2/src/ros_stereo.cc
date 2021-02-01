@@ -34,6 +34,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "../../../include/System.h"
+#include "torch_helpers.h"
 
 // Command line flags flag
 DEFINE_string(vocab_path, "", "Path to ORB vocabulary.");
@@ -128,6 +129,12 @@ DECLARE_bool(help);
 DECLARE_bool(helpshort);
 
 using namespace std;
+using namespace ORB_SLAM2;
+
+// Declared at global scope so they will be accessible to the message
+// syncrhonzier callback where the images are actually received
+torch::jit::script::Module introspection_func;
+torch::Device device = torch::kCPU;
 
 // Checks if all required command line arguments have been set
 void CheckCommandLineArgs(char** argv) {
@@ -194,9 +201,7 @@ int main(int argc, char** argv) {
                << "visualization is requested!";
   }
 
-  torch::jit::script::Module introspection_func;
-  torch::Device device = torch::kCPU;
-  if (FLAGS_introspection_func_enabled && !FLAGS_load_img_qual_heatmaps) {
+  if (FLAGS_introspection_func_enabled) {
     try {
       // Deserialize the ScriptModule from file
       introspection_func = torch::jit::load(FLAGS_introspection_model_path);
@@ -206,7 +211,7 @@ int main(int argc, char** argv) {
         device = torch::kCUDA;
       }
       introspection_func.to(device);
-    } catch (const c10::Error &e) {
+    } catch (const c10::Error& e) {
       std::cerr << "error loading the introspection model\n";
       return -1;
     }
@@ -377,16 +382,57 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     return;
   }
 
+  cv::Mat imLeft, imRight;
   if (do_process) {
-    cv::Mat imLeft, imRight;
     cv::remap(cv_ptrLeft->image, imLeft, M1l, M2l, cv::INTER_LINEAR);
     cv::remap(cv_ptrRight->image, imRight, M1r, M2r, cv::INTER_LINEAR);
-    mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
   } else {
-    mpSLAM->TrackStereo(cv_ptrLeft->image,
-                        cv_ptrRight->image,
-                        cv_ptrLeft->header.stamp.toSec());
+    imLeft = cv_ptrLeft->image;
+    imRight = cv_ptrRight->image;
   }
 
-  
+  Eigen::Matrix<double, 6, 6> cam_poses_gt_cov;
+  bool pose_cov_available = false;
+  string img_name;
+
+  if (FLAGS_ivslam_enabled) {
+    cv::Mat cost_img_cv;
+    at::Tensor cost_img;
+
+    cv::Mat imLeft_RGB =
+        imLeft;  // TODO initializae imLeft_RGB as blank instead of imLeft
+    cv::cvtColor(imLeft_RGB, imLeft_RGB, CV_BGR2RGB);
+
+    // Convert to float and normalize image
+    imLeft_RGB.convertTo(imLeft_RGB, CV_32FC3, 1.0 / 255.0);
+    cv::subtract(imLeft_RGB, cv::Scalar(0.485, 0.456, 0.406), imLeft_RGB);
+    cv::divide(imLeft_RGB, cv::Scalar(0.229, 0.224, 0.225), imLeft_RGB);
+
+    auto tensor_img = CVImgToTensor(imLeft_RGB);
+    // Swap axis
+    tensor_img = TransposeTensor(tensor_img, {(2), (0), (1)});
+    // Add batch dim
+    tensor_img.unsqueeze_(0);
+
+    tensor_img = tensor_img.to(device);
+    std::vector<torch::jit::IValue> inputs{tensor_img};
+    cost_img = introspection_func.forward(inputs).toTensor();
+    cost_img = (cost_img * 255.0).to(torch::kByte);
+    cost_img = cost_img.to(torch::kCPU);
+
+    cost_img_cv = ToCvImage(cost_img);
+
+    cv::Mat cam_pose_gt = cv::Mat(0, 0, CV_32F);
+    mpSLAM->TrackStereo(imLeft,
+                        imRight,
+                        cv_ptrLeft->header.stamp.toSec(),
+                        cam_pose_gt,
+                        cam_poses_gt_cov,
+                        pose_cov_available,
+                        img_name,
+                        false,
+                        cost_img_cv);
+  } else {
+    mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
+  }
 }
