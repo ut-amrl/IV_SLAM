@@ -23,6 +23,9 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -131,6 +134,17 @@ DECLARE_bool(helpshort);
 using namespace std;
 using namespace ORB_SLAM2;
 
+
+namespace {
+  ros::Publisher pose_pub_;
+  geometry_msgs::PoseStamped current_pose_ros_;
+  cv::Mat current_pose_cv_;
+
+  std::string map_frame_ = "map";
+  std::string odom_frame_ = "odom";
+} //namespace
+
+
 // Declared at global scope so they will be accessible to the message
 // syncrhonzier callback where the images are actually received
 torch::jit::script::Module introspection_func;
@@ -166,6 +180,23 @@ class ImageGrabber {
   cv::Mat M1l, M2l, M1r, M2r;
 };
 
+geometry_msgs::Pose cvMatToPose(cv::Mat& cv_pose){
+  // Convert to a tf2::Matrix3x3
+  tf2::Matrix3x3 tf2_rot(cv_pose.at<float>(0, 0), cv_pose.at<float>(0, 1), cv_pose.at<float>(0, 2),
+                         cv_pose.at<float>(1, 0), cv_pose.at<float>(1, 1), cv_pose.at<float>(1, 2),
+                         cv_pose.at<float>(2, 0), cv_pose.at<float>(2, 1), cv_pose.at<float>(2, 2));
+  
+  tf2::Vector3 tf2_trans(cv_pose.at<float>(0, 3), cv_pose.at<float>(1, 3), cv_pose.at<float>(2, 3) );
+
+  // Create a transform and convert to a Pose
+  tf2::Transform tf2_transform(tf2_rot, tf2_trans);
+  geometry_msgs::Pose ros_pose;
+  tf2::toMsg(tf2_transform, ros_pose);
+
+  return ros_pose;
+}
+
+
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_stderrthreshold = 2;   // ERROR level logging.
@@ -176,9 +207,8 @@ int main(int argc, char** argv) {
   ros::start();
 
   string usage(
-      "This program runs stereo ORB-SLAM on KITTI format "
-      "data with the option to run with IV-SLAM in inference mode "
-      "or generate training data for it. \n");
+      "This program runs stereo ORB-SLAM on ROS "
+      "data with the option to run with IV-SLAM in inference mode\n");
 
   usage += string(argv[0]) + " <argument1> <argument2> ...";
   gflags::SetUsageMessage(usage);
@@ -336,7 +366,11 @@ int main(int argc, char** argv) {
   }
 
   ros::NodeHandle nh;
+  
+  current_pose_ros_.header.frame_id = map_frame_;
 
+  pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
+      "visual_slam_pose", 1);
   message_filters::Subscriber<sensor_msgs::Image> left_sub(
       nh, "/stereo/left/image_raw", 1);
   message_filters::Subscriber<sensor_msgs::Image> right_sub(
@@ -432,6 +466,15 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                         img_name,
                         false,
                         cost_img_cv);
+    
+    if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
+      current_pose_ros_.pose = cvMatToPose(current_pose_cv_);
+      current_pose_ros_.header.stamp = ros::Time::now();
+      pose_pub_.publish(current_pose_ros_);
+    }else{
+      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped" << endl;
+    }
+    
   } else {
     mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
   }
