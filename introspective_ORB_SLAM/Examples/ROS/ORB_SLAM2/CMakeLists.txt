@@ -47,6 +47,7 @@ FIND_PACKAGE(roscpp REQUIRED)
 FIND_PACKAGE(roslib REQUIRED)
 FIND_PACKAGE(cv_bridge REQUIRED)
 FIND_PACKAGE(message_filters REQUIRED)
+FIND_PACKAGE(tf2_ros REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -57,6 +58,7 @@ ${roscpp_INCLUDE_DIRS}
 ${roslib_INCLUDE_DIRS}
 ${cv_bridge_INCLUDE_DIRS}
 ${message_filters_INCLUDE_DIRS}
+${tf2_ros_INCLUDE_DIRS}
 )
 
 set(LIBS 
@@ -74,6 +76,7 @@ ${roscpp_LIBRARIES}
 ${roslib_LIBRARIES}
 ${cv_bridge_LIBRARIES}
 ${message_filters_LIBRARIES}
+${tf2_ros_LIBRARIES}
 )
 
 # Node for monocular camera
