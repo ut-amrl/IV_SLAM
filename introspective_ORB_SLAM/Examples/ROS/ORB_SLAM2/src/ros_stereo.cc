@@ -25,9 +25,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
-#include <geometry_msgs/TransformStamped.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_ros/transform_broadcaster.h>
 #include <ros/ros.h>
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -142,11 +140,7 @@ namespace {
   geometry_msgs::PoseStamped current_pose_ros_;
   cv::Mat current_pose_cv_;
 
- 
-  geometry_msgs::TransformStamped current_tf_;
-
   std::string map_frame_ = "map";
-  std::string odom_frame_ = "odom";
 } //namespace
 
 
@@ -373,9 +367,6 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   
   current_pose_ros_.header.frame_id = map_frame_;
-  // It is expected that this visual slam soln provide the map->odom tf and that some odometry solution will provide odom->base_link
-  current_tf_.header.frame_id = map_frame_;
-  current_tf_.child_frame_id = odom_frame_;
 
   pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
       "visual_slam_pose", 1);
@@ -477,20 +468,13 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     
     // Publish pose and tf to ROS
     if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
-      current_pose_ros_.pose = cvMatToPose(current_pose_cv_);
+      geometry_msgs::Pose pose_cam_frame = cvMatToPose(current_pose_cv_);
+      current_pose_ros_.pose.position.x = pose_cam_frame.position.z;
+      current_pose_ros_.pose.position.y = -pose_cam_frame.position.x;
+      current_pose_ros_.pose.position.z = -pose_cam_frame.position.y;
+      current_pose_ros_.pose.orientation = pose_cam_frame.orientation; // TODO need to transfrom this to REP-105 RHR frame
       current_pose_ros_.header.stamp = ros::Time::now();
-      
-      static tf2_ros::TransformBroadcaster tf_broadcaster_;
-      // Change signs/order of translation to account for tf from local camera coordinate frame to usual REP-105 RHR frame
-      current_tf_.transform.translation.x = current_pose_ros_.pose.position.z;
-      current_tf_.transform.translation.y = -current_pose_ros_.pose.position.x;
-      current_tf_.transform.translation.z = -current_pose_ros_.pose.position.y;
-      current_tf_.transform.rotation = current_pose_ros_.pose.orientation;
-      current_tf_.header.stamp = current_pose_ros_.header.stamp;
-
       pose_pub_.publish(current_pose_ros_);
-      tf_broadcaster_.sendTransform(current_tf_);
-
     }else{
       LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped or updating the transform" << endl;
     }
