@@ -27,6 +27,7 @@
 #include <geometry_msgs/Pose.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
+#include "std_srvs/Trigger.h"
 #include <torch/script.h>
 #include <torch/torch.h>
 
@@ -169,14 +170,19 @@ void CheckCommandLineArgs(char** argv) {
 
 class ImageGrabber {
  public:
-  ImageGrabber(ORB_SLAM2::System* pSLAM) : mpSLAM(pSLAM) {}
+  ImageGrabber(ros::NodeHandle nh, ORB_SLAM2::System* pSLAM);
 
   void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                   const sensor_msgs::ImageConstPtr& msgRight);
+  
+  bool resetServiceCB(std_srvs::Trigger::Request &req,
+                      std_srvs::Trigger::Response &res);
 
   ORB_SLAM2::System* mpSLAM;
   bool do_process;
   cv::Mat M1l, M2l, M1r, M2r;
+  ros::NodeHandle nh_;
+  ros::ServiceServer reset_vslam_service_;
 };
 
 geometry_msgs::Pose cvMatToPose(cv::Mat& cv_pose){
@@ -194,7 +200,6 @@ geometry_msgs::Pose cvMatToPose(cv::Mat& cv_pose){
 
   return ros_pose;
 }
-
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -266,7 +271,9 @@ int main(int argc, char** argv) {
                          silent_mode,
                          guided_ba);
 
-  ImageGrabber igb(&SLAM);
+  ros::NodeHandle nh;
+
+  ImageGrabber igb(nh, &SLAM);
   igb.do_process = true;
   // Read undistortion/rectification parameters
   cv::FileStorage fsSettings(FLAGS_settings_path, cv::FileStorage::READ);
@@ -364,7 +371,7 @@ int main(int argc, char** argv) {
                                 igb.M2r);
   }
 
-  ros::NodeHandle nh;
+  
   
   current_pose_ros_.header.frame_id = map_frame_;
 
@@ -395,6 +402,13 @@ int main(int argc, char** argv) {
 
   return 0;
 }
+
+ImageGrabber::ImageGrabber(ros::NodeHandle nh, ORB_SLAM2::System* pSLAM) :nh_(nh), mpSLAM(pSLAM) {
+     reset_vslam_service_ =
+        nh.advertiseService("/reset_vslam",
+                             &ImageGrabber::resetServiceCB,
+                             this);
+  }
 
 void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                               const sensor_msgs::ImageConstPtr& msgRight) {
@@ -466,7 +480,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                         false,
                         cost_img_cv);
     
-    // Publish pose and tf to ROS
+    // Publish pose to ROS
     if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
       geometry_msgs::Pose pose_cam_frame = cvMatToPose(current_pose_cv_);
       current_pose_ros_.pose.position.x = pose_cam_frame.position.z;
@@ -476,10 +490,18 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
       current_pose_ros_.header.stamp = ros::Time::now();
       pose_pub_.publish(current_pose_ros_);
     }else{
-      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped or updating the transform" << endl;
+      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped" << endl;
     }
     
   } else {
     mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
   }
 }
+
+bool ImageGrabber::resetServiceCB(std_srvs::Trigger::Request &req,
+                      std_srvs::Trigger::Response &res) {
+    mpSLAM->Reset();
+    res.success = true;
+    res.message = "Called reset_vslam_service_";
+    return true;
+  }
