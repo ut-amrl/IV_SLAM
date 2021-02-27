@@ -495,6 +495,18 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     
   } else {
     mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
+    // Publish pose to ROS
+    if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
+      geometry_msgs::Pose pose_cam_frame = cvMatToPose(current_pose_cv_);
+      current_pose_ros_.pose.position.x = pose_cam_frame.position.z;
+      current_pose_ros_.pose.position.y = -pose_cam_frame.position.x;
+      current_pose_ros_.pose.position.z = -pose_cam_frame.position.y;
+      current_pose_ros_.pose.orientation = pose_cam_frame.orientation; // TODO need to transfrom this to REP-105 RHR frame
+      current_pose_ros_.header.stamp = ros::Time::now();
+      pose_pub_.publish(current_pose_ros_);
+    }else{
+      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped" << endl;
+    }
   }
 }
 
