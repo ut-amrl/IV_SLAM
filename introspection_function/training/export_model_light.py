@@ -39,7 +39,8 @@ def main():
 
   cfg.MODEL.weights_encoder = cfg.TEST.test_model_encoder
   cfg.MODEL.weights_decoder = cfg.TEST.test_model_decoder
-
+  print("Loading from: " + cfg.TEST.test_model_encoder)
+  print("Loading from: " + cfg.TEST.test_model_decoder)
   apply_logistic_func = True
 
   # The desired size of the input image to the network. The model resizes the 
@@ -107,7 +108,7 @@ def main():
     img = data_transform_input(img)
     img = img.reshape((1, 3, img.shape[1], img.shape[2]))
   else:
-    img = torch.rand(1, 3, 1024, 1224)
+    img = torch.rand(1, 3, cfg.DATASET.img_height, cfg.DATASET.img_width)
   # ***********************
 
   # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
