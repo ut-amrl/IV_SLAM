@@ -248,7 +248,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
 
 }
 
-int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
+int Optimizer::PoseOptimization(Frame *pFrame, bool logging, bool track_ref)
 {
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
@@ -276,11 +276,15 @@ int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
     vector<size_t> vnIndexEdgeMono;
     vpEdgesMono.reserve(N);
     vnIndexEdgeMono.reserve(N);
+    vector<float> vPointQualityCoeffMono;
+    vPointQualityCoeffMono.reserve(N);
 
     vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose*> vpEdgesStereo;
     vector<size_t> vnIndexEdgeStereo;
     vpEdgesStereo.reserve(N);
     vnIndexEdgeStereo.reserve(N);
+    vector<float> vPointQualityCoeffStereo;
+    vPointQualityCoeffStereo.reserve(N);
     
     // 95% quantile
     const float deltaMono = sqrt(5.991);
@@ -318,42 +322,51 @@ int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
             } else {
               qual_score = pFrame->mvKeyQualScore[i];
             }
-            
+            float qual_score_sq = qual_score * qual_score;
+            float qual_score_coeff = 1.0;
+            if (track_ref || true) {
+              qual_score_coeff = (1 + qual_score_sq) * (1 + qual_score_sq) /
+                                 (4 * std::max(qual_score_sq, 0.1f));
+            }
+
             // Monocular observation
-            if(pFrame->mvuRight[i]<0)
-            {
-                nInitialCorrespondences++;
-                pFrame->mvbOutlier[i] = false;
+            if (pFrame->mvuRight[i] < 0) {
+              nInitialCorrespondences++;
+              pFrame->mvbOutlier[i] = false;
 
-                Eigen::Matrix<double,2,1> obs;
-                const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
-                obs << kpUn.pt.x, kpUn.pt.y;
+              Eigen::Matrix<double, 2, 1> obs;
+              const cv::KeyPoint& kpUn = pFrame->mvKeysUn[i];
+              obs << kpUn.pt.x, kpUn.pt.y;
 
-                g2o::EdgeSE3ProjectXYZOnlyPose* e = new g2o::EdgeSE3ProjectXYZOnlyPose();
+              g2o::EdgeSE3ProjectXYZOnlyPose* e =
+                  new g2o::EdgeSE3ProjectXYZOnlyPose();
 
-                e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
-                e->setMeasurement(obs);
-                const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
-                
-                e->setInformation( Eigen::Matrix2d::Identity()* invSigma2);
+              e->setVertex(0,
+                           dynamic_cast<g2o::OptimizableGraph::Vertex*>(
+                               optimizer.vertex(0)));
+              e->setMeasurement(obs);
+              const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
 
-                g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                e->setRobustKernel(rk);
-                rk->setDelta(deltaMono * qual_score);
-                
-                e->fx = pFrame->fx;
-                e->fy = pFrame->fy;
-                e->cx = pFrame->cx;
-                e->cy = pFrame->cy;
-                cv::Mat Xw = pMP->GetWorldPos();
-                e->Xw[0] = Xw.at<float>(0);
-                e->Xw[1] = Xw.at<float>(1);
-                e->Xw[2] = Xw.at<float>(2);
+              e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
-                optimizer.addEdge(e);
+              g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+              e->setRobustKernel(rk);
+              rk->setDelta(deltaMono * qual_score);
 
-                vpEdgesMono.push_back(e);
-                vnIndexEdgeMono.push_back(i);
+              e->fx = pFrame->fx;
+              e->fy = pFrame->fy;
+              e->cx = pFrame->cx;
+              e->cy = pFrame->cy;
+              cv::Mat Xw = pMP->GetWorldPos();
+              e->Xw[0] = Xw.at<float>(0);
+              e->Xw[1] = Xw.at<float>(1);
+              e->Xw[2] = Xw.at<float>(2);
+
+              optimizer.addEdge(e);
+
+              vpEdgesMono.push_back(e);
+              vnIndexEdgeMono.push_back(i);
+              vPointQualityCoeffMono.push_back(qual_score_coeff);
             }
             else  // Stereo observation
             {
@@ -393,6 +406,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
 
                 vpEdgesStereo.push_back(e);
                 vnIndexEdgeStereo.push_back(i);
+                vPointQualityCoeffStereo.push_back(qual_score_coeff);
             }
         }
 
@@ -433,7 +447,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
 
             const float chi2 = e->chi2();
 
-            if(chi2>chi2Mono[it])
+            if(chi2>(vPointQualityCoeffMono[i] * chi2Mono[it]))
             {                
                 pFrame->mvbOutlier[idx]=true;
                 e->setLevel(1);
@@ -468,7 +482,7 @@ int Optimizer::PoseOptimization(Frame *pFrame, bool logging)
 
             const float chi2 = e->chi2();
 
-            if(chi2>chi2Stereo[it])
+            if(chi2>(vPointQualityCoeffStereo[i] * chi2Stereo[it]))
             {
                 pFrame->mvbOutlier[idx]=true;
                 e->setLevel(1);
@@ -613,8 +627,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
     vector<MapPoint*> vpMapPointEdgeMono;
     vpMapPointEdgeMono.reserve(nExpectedSize);
     
-    vector<float> vPointQualityMono;
-    vPointQualityMono.reserve(nExpectedSize);
+    vector<float> vPointQualityCoeffMono;
+    vPointQualityCoeffMono.reserve(nExpectedSize);
     
     vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
     vpEdgesStereo.reserve(nExpectedSize);
@@ -625,8 +639,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
     vector<MapPoint*> vpMapPointEdgeStereo;
     vpMapPointEdgeStereo.reserve(nExpectedSize);
     
-    vector<float> vPointQualityStereo;
-    vPointQualityStereo.reserve(nExpectedSize);
+    vector<float> vPointQualityCoeffStereo;
+    vPointQualityCoeffStereo.reserve(nExpectedSize);
 
     // 95% quantile
     const float thHuberMono = sqrt(5.991);
@@ -672,7 +686,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
                 } else {
                   qual_score = pKFi->mvKeyQualScore[mit->second];
                 }
-                
+                float qual_score_sq = qual_score * qual_score;
+                float qual_score_coeff = 1.0;
+                if (true) {
+                  qual_score_coeff = (1 + qual_score_sq) * (1 + qual_score_sq) /
+                                     (4 * std::max(qual_score_sq, 0.1f));
+                }
+
                 // Monocular observation
                 if(pKFi->mvuRight[mit->second]<0)
                 {
@@ -702,7 +722,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
                     vpEdgesMono.push_back(e);
                     vpEdgeKFMono.push_back(pKFi);
                     vpMapPointEdgeMono.push_back(pMP);
-                    vPointQualityMono.push_back(qual_score);
+                    vPointQualityCoeffMono.push_back(qual_score_coeff);
                 }
                 else // Stereo observation
                 {
@@ -736,7 +756,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
                     vpEdgesStereo.push_back(e);
                     vpEdgeKFStereo.push_back(pKFi);
                     vpMapPointEdgeStereo.push_back(pMP);
-                    vPointQualityStereo.push_back(qual_score);
+                    vPointQualityCoeffStereo.push_back(qual_score_coeff);
                 }
             }
         }
@@ -766,9 +786,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
         if(pMP->isBad())
             continue;
 
-        if(e->chi2()>thHuberMonoSq || !e->isDepthPositive())
-        {
-            e->setLevel(1);
+        if (e->chi2() > (thHuberMonoSq * vPointQualityCoeffMono[i]) ||
+            !e->isDepthPositive()) {
+          e->setLevel(1);
         }
 
         e->setRobustKernel(0);
@@ -782,9 +802,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
         if(pMP->isBad())
             continue;
 
-        if(e->chi2()>thHuberStereoSq || !e->isDepthPositive())
-        {
-            e->setLevel(1);
+        if ((e->chi2() > thHuberStereoSq * vPointQualityCoeffStereo[i]) ||
+            !e->isDepthPositive()) {
+          e->setLevel(1);
         }
 
         e->setRobustKernel(0);
@@ -810,13 +830,12 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
         if(pMP->isBad())
             continue;
 
-        if(e->chi2()>thHuberMonoSq || !e->isDepthPositive())
-        {
-            KeyFrame* pKFi = vpEdgeKFMono[i];
-            vToErase.push_back(make_pair(pKFi,pMP));
+        if (e->chi2() > (thHuberMonoSq * vPointQualityCoeffMono[i]) ||
+            !e->isDepthPositive()) {
+          KeyFrame* pKFi = vpEdgeKFMono[i];
+          vToErase.push_back(make_pair(pKFi, pMP));
         }
     }
-   
 
     for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
     {
@@ -826,10 +845,10 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF,
         if(pMP->isBad())
             continue;
 
-        if(e->chi2()>thHuberStereoSq || !e->isDepthPositive())
-        {
-            KeyFrame* pKFi = vpEdgeKFStereo[i];
-            vToErase.push_back(make_pair(pKFi,pMP));
+        if (e->chi2() > (thHuberStereoSq * vPointQualityCoeffStereo[i]) ||
+            !e->isDepthPositive()) {
+          KeyFrame* pKFi = vpEdgeKFStereo[i];
+          vToErase.push_back(make_pair(pKFi, pMP));
         }
     }
    

@@ -1206,7 +1206,7 @@ bool Tracking::TrackReferenceKeyFrame(float nn_ratio_mult,
   }
 
   // Do additional logging if in training mode
-  Optimizer::PoseOptimization(&mCurrentFrame, mbUnsupervisedLearning);
+  Optimizer::PoseOptimization(&mCurrentFrame, mbUnsupervisedLearning, true);
   if (mbGuidedBA) {
     mCurrentFrame.ApplyReferencePose();
   }

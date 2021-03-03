@@ -64,7 +64,8 @@ public:
     // If logging is set, some information regarding the reprojection error
     // of each keypoint will be stored in the frame object
     int static PoseOptimization(Frame* pFrame,
-                                bool logging = false);
+                                bool logging = false,
+                                bool track_ref = false);
 
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
     void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
