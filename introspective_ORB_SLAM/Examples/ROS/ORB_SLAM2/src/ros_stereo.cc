@@ -19,17 +19,17 @@
  */
 
 #include <cv_bridge/cv_bridge.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <gflags/gflags.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Pose.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
-#include "std_srvs/Trigger.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <torch/script.h>
 #include <torch/torch.h>
+#include "std_srvs/Trigger.h"
 
 #include <algorithm>
 #include <chrono>
@@ -135,15 +135,13 @@ DECLARE_bool(helpshort);
 using namespace std;
 using namespace ORB_SLAM2;
 
-
 namespace {
   ros::Publisher pose_pub_;
   geometry_msgs::PoseStamped current_pose_ros_;
   cv::Mat current_pose_cv_;
 
   std::string map_frame_ = "map";
-} //namespace
-
+}  // namespace
 
 // Declared at global scope so they will be accessible to the message
 // syncrhonzier callback where the images are actually received
@@ -175,8 +173,8 @@ class ImageGrabber {
   void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                   const sensor_msgs::ImageConstPtr& msgRight);
   
-  bool resetServiceCB(std_srvs::Trigger::Request &req,
-                      std_srvs::Trigger::Response &res);
+  bool resetServiceCB(std_srvs::Trigger::Request& req,
+                      std_srvs::Trigger::Response& res);
 
   ORB_SLAM2::System* mpSLAM;
   bool do_process;
@@ -185,13 +183,21 @@ class ImageGrabber {
   ros::ServiceServer reset_vslam_service_;
 };
 
-geometry_msgs::Pose cvMatToPose(cv::Mat& cv_pose){
+geometry_msgs::Pose cvMatToPose(cv::Mat& cv_pose) {
   // Convert to a tf2::Matrix3x3
-  tf2::Matrix3x3 tf2_rot(cv_pose.at<float>(0, 0), cv_pose.at<float>(0, 1), cv_pose.at<float>(0, 2),
-                         cv_pose.at<float>(1, 0), cv_pose.at<float>(1, 1), cv_pose.at<float>(1, 2),
-                         cv_pose.at<float>(2, 0), cv_pose.at<float>(2, 1), cv_pose.at<float>(2, 2));
+  tf2::Matrix3x3 tf2_rot(cv_pose.at<float>(0, 0),
+                         cv_pose.at<float>(0, 1),
+                         cv_pose.at<float>(0, 2),
+                         cv_pose.at<float>(1, 0),
+                         cv_pose.at<float>(1, 1),
+                         cv_pose.at<float>(1, 2),
+                         cv_pose.at<float>(2, 0),
+                         cv_pose.at<float>(2, 1),
+                         cv_pose.at<float>(2, 2));
   
-  tf2::Vector3 tf2_trans(cv_pose.at<float>(0, 3), cv_pose.at<float>(1, 3), cv_pose.at<float>(2, 3) );
+  tf2::Vector3 tf2_trans(cv_pose.at<float>(0, 3),
+                         cv_pose.at<float>(1, 3),
+                         cv_pose.at<float>(2, 3));
 
   // Create a transform and convert to a Pose
   tf2::Transform tf2_transform(tf2_rot, tf2_trans);
@@ -371,12 +377,9 @@ int main(int argc, char** argv) {
                                 igb.M2r);
   }
 
-  
-  
   current_pose_ros_.header.frame_id = map_frame_;
 
-  pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
-      "visual_slam_pose", 1);
+  pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>("visual_slam_pose", 1);
   message_filters::Subscriber<sensor_msgs::Image> left_sub(
       nh, "/stereo/left/image_raw", 1);
   message_filters::Subscriber<sensor_msgs::Image> right_sub(
@@ -403,11 +406,10 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-ImageGrabber::ImageGrabber(ros::NodeHandle nh, ORB_SLAM2::System* pSLAM) :nh_(nh), mpSLAM(pSLAM) {
+ImageGrabber::ImageGrabber(ros::NodeHandle nh, ORB_SLAM2::System* pSLAM)
+    : nh_(nh), mpSLAM(pSLAM) {
      reset_vslam_service_ =
-        nh.advertiseService("/reset_vslam",
-                             &ImageGrabber::resetServiceCB,
-                             this);
+      nh.advertiseService("/reset_vslam", &ImageGrabber::resetServiceCB, this);
   }
 
 void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
@@ -446,9 +448,15 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     cv::Mat cost_img_cv;
     at::Tensor cost_img;
 
-    cv::Mat imLeft_RGB =
-        imLeft;  // TODO initializae imLeft_RGB as blank instead of imLeft
+    cv::Mat imLeft_RGB = imLeft.clone();
+    if (GetImageType(imLeft, false) == "8UC1") {
+      // Convert to color if image is mono
+      cv::cvtColor(imLeft_RGB, imLeft_RGB, CV_GRAY2RGB);
+    } else {
+      // Default image encoding is BGR in OpenCV and ROS. Convert it to RGB
+      // which is what the introspection function expects
     cv::cvtColor(imLeft_RGB, imLeft_RGB, CV_BGR2RGB);
+    }
 
     // Convert to float and normalize image
     imLeft_RGB.convertTo(imLeft_RGB, CV_32FC3, 1.0 / 255.0);
@@ -481,37 +489,45 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
                         cost_img_cv);
     
     // Publish pose to ROS
-    if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
+    if (mpSLAM->GetCurrentCamPose(current_pose_cv_)) {
       geometry_msgs::Pose pose_cam_frame = cvMatToPose(current_pose_cv_);
       current_pose_ros_.pose.position.x = pose_cam_frame.position.z;
       current_pose_ros_.pose.position.y = -pose_cam_frame.position.x;
       current_pose_ros_.pose.position.z = -pose_cam_frame.position.y;
-      current_pose_ros_.pose.orientation = pose_cam_frame.orientation; // TODO need to transfrom this to REP-105 RHR frame
+      current_pose_ros_.pose.orientation =
+          pose_cam_frame
+              .orientation;  // TODO need to transfrom this to REP-105 RHR frame
       current_pose_ros_.header.stamp = ros::Time::now();
       pose_pub_.publish(current_pose_ros_);
-    }else{
-      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped" << endl;
+    } else {
+      LOG(WARNING)
+          << "Could not get current cam pose! Not publishing ROS pose stamped"
+          << endl;
     }
     
   } else {
     mpSLAM->TrackStereo(imLeft, imRight, cv_ptrLeft->header.stamp.toSec());
     // Publish pose to ROS
-    if(mpSLAM->GetCurrentCamPose(current_pose_cv_)){
+    if (mpSLAM->GetCurrentCamPose(current_pose_cv_)) {
       geometry_msgs::Pose pose_cam_frame = cvMatToPose(current_pose_cv_);
       current_pose_ros_.pose.position.x = pose_cam_frame.position.z;
       current_pose_ros_.pose.position.y = -pose_cam_frame.position.x;
       current_pose_ros_.pose.position.z = -pose_cam_frame.position.y;
-      current_pose_ros_.pose.orientation = pose_cam_frame.orientation; // TODO need to transfrom this to REP-105 RHR frame
+      current_pose_ros_.pose.orientation =
+          pose_cam_frame
+              .orientation;  // TODO need to transfrom this to REP-105 RHR frame
       current_pose_ros_.header.stamp = ros::Time::now();
       pose_pub_.publish(current_pose_ros_);
-    }else{
-      LOG(FATAL) << "Could not get current cam pose! Not publishing ROS pose stamped" << endl;
+    } else {
+      LOG(FATAL)
+          << "Could not get current cam pose! Not publishing ROS pose stamped"
+          << endl;
     }
   }
 }
 
-bool ImageGrabber::resetServiceCB(std_srvs::Trigger::Request &req,
-                      std_srvs::Trigger::Response &res) {
+bool ImageGrabber::resetServiceCB(std_srvs::Trigger::Request& req,
+                                  std_srvs::Trigger::Response& res) {
     mpSLAM->Reset();
     res.success = true;
     res.message = "Called reset_vslam_service_";
