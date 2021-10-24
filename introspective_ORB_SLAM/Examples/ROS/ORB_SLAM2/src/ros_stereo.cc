@@ -66,6 +66,14 @@ DEFINE_string(out_visualization_path,
               "Output path for visualization "
               "results.");
 
+DEFINE_string(left_cam_topic,
+              "/stereo/left/image_raw",
+              "ROS topic for the left camera.");
+
+DEFINE_string(right_cam_topic,
+              "/stereo/right/image_raw",
+              "ROS topic for the right camera.");
+
 DEFINE_string(out_dataset_path, "", "Output path for generated dataset.");
 
 DEFINE_string(rel_pose_uncertainty_path,
@@ -280,7 +288,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
 
   ImageGrabber igb(nh, &SLAM);
-  igb.do_process = true;
+  igb.do_process = FLAGS_rectify_images || FLAGS_undistort_images;
   // Read undistortion/rectification parameters
   cv::FileStorage fsSettings(FLAGS_settings_path, cv::FileStorage::READ);
   if (!fsSettings.isOpened()) {
@@ -381,9 +389,9 @@ int main(int argc, char** argv) {
 
   pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>("visual_slam_pose", 1);
   message_filters::Subscriber<sensor_msgs::Image> left_sub(
-      nh, "/stereo/left/image_raw", 1);
+      nh, FLAGS_left_cam_topic, 1);
   message_filters::Subscriber<sensor_msgs::Image> right_sub(
-      nh, "/stereo/right/image_raw", 1);
+      nh, FLAGS_right_cam_topic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
                                                           sensor_msgs::Image>
       sync_pol;
@@ -448,7 +456,8 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
     cv::Mat cost_img_cv;
     at::Tensor cost_img;
 
-    cv::Mat imLeft_RGB = imLeft.clone();
+    // cv::Mat imLeft_RGB = imLeft.clone();
+    cv::Mat imLeft_RGB = imLeft;
     if (GetImageType(imLeft, false) == "8UC1") {
       // Convert to color if image is mono
       cv::cvtColor(imLeft_RGB, imLeft_RGB, CV_GRAY2RGB);
@@ -501,7 +510,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
       pose_pub_.publish(current_pose_ros_);
     } else {
       LOG(WARNING)
-          << "Could not get current cam pose! Not publishing ROS pose stamped"
+          << "Could not get current cam pose! Not publishing ROS pose stamped "
           << endl;
     }
     
@@ -520,7 +529,7 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,
       pose_pub_.publish(current_pose_ros_);
     } else {
       LOG(FATAL)
-          << "Could not get current cam pose! Not publishing ROS pose stamped"
+          << "Could not get current cam pose! Not publishing ROS pose stamped "
           << endl;
     }
   }

@@ -1,0 +1,161 @@
+%YAML:1.0
+
+#-------------------------------------------------------------------------------
+# IV_SLAM Parameters. 
+#-------------------------------------------------------------------------------
+# If set to true, training data for the introspeciton model (the heatmaps)
+# are generated in an unsupervised manner and reference camera poses are only
+# used for evaluating the reliability of ORB-SLAM's output
+IVSLAM.unsupervisedLearning: 0
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 2000 # 2000
+
+# If set to true, non-uniform distribution of features is applied across
+# the image when feature quality heatmaps are provided
+ORBextractor.enableIntrospection: 0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV) 
+# focal length in x and y directions
+Camera.fx: 385.9819   # left camera's P matrix (0,0) element
+Camera.fy: 385.9819   # left camera's P matrix (1,1) element
+Camera.cx: 290.74322  # left camera's P matrix (0,2) element
+Camera.cy: 260.91440  # left camera's P matrix (1,2) element
+
+# Distoration parameters
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: 612
+Camera.height: 512
+
+# Camera frames per second - same as lidar fps from legoloam2kitti
+Camera.fps: 10.0
+
+
+# positive RIGHT.P (0,3)
+Camera.bf: 74.6529668134628
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.
+ThDepth: 35
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+LEFT.height: 512
+LEFT.width: 612
+LEFT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [-0.019285233997575087, 0.035947833861205765, 6.0127458205990066e-05, -0.0016491603249031042, 0.0]
+LEFT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [362.60682602346066, 0.0, 313.5143337215301, 0.0, 361.5330274729945, 263.93269869831505, 0.0, 0.0, 1.0]
+LEFT.distortion_model: plumb_bob
+LEFT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [0.9994868987428702, 0.0038457517344127746, 0.031798575989446666, -0.003781914231311271, 0.9999907113236656, -0.002067460068860445, -0.03180623156091205, 0.0019461397654301148, 0.9994921591357818]
+LEFT.P:  !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [385.98196135643065, 0.0, 290.7432289123535, 0.0, 0.0, 385.98196135643065, 260.91440200805664, 0.0, 0.0, 0.0, 1.0, 0.0]
+RIGHT.height: 512
+RIGHT.width: 612
+RIGHT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [-0.018630199468445137, 0.032744437507029975, 0.0003360207125447308, -0.0003434467055730752, 0.0]
+RIGHT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [361.8118307092255, 0.0, 301.0688182169071, 0.0, 360.54356151283696, 258.3878669822617, 0.0, 0.0, 1.0]
+RIGHT.distortion_model: plumb_bob
+RIGHT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [0.9998062083342057, 0.0013938674550279888, 0.019636774426991042, -0.0014332786901081718, 0.999996986666049, 0.0019930807856929555, -0.019633937164389555, -0.002020839513576112, 0.999805193384734]
+RIGHT.P:  !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [385.98196135643065, 0.0, 290.7432289123535, -74.6529668134628, 0.0, 385.98196135643065, 260.91440200805664, 0.0, 0.0, 0.0, 1.0, 0.0]
+
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+
+# ORB Extractor: Scale factor between levels in the scale pyramid    
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid   
+ORBextractor.nLevels: 8
+
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast        
+ORBextractor.iniThFAST: 12
+ORBextractor.minThFAST: 7
+
+
+#-------------------------------------------------------------------------
+# ORB Matcher Parameters
+#-------------------------------------------------------------------------
+ORBMatcher.NNRatioMultiplier: 0.95
+ORBMatcher.SearchWindowMultiplier: 1.2
+
+
+#-------------------------------------------------------------------------------
+# Viewer Parameters
+#-------------------------------------------------------------------------------
+
+## Visibility Enhanced Mode
+#Viewer.KeyFrameSize: 0.05
+#Viewer.KeyFrameLineWidth: 3
+#Viewer.GraphLineWidth: 3.0
+#Viewer.PointSize:6
+#Viewer.CameraSize: 0.08
+#Viewer.CameraLineWidth: 5
+#Viewer.ViewpointX: 0
+#Viewer.ViewpointY: -0.7
+#Viewer.ViewpointZ: -1.8
+#Viewer.ViewpointF: 350 # 500
+
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 4
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8 # topView:-0.3
+Viewer.ViewpointF: 250 # 500 topView: 50
+
+# If set to 1, frame drawings will happen in headless mode. Useful if you want
+# to save visualizations to file. If you want to completely turn off the 
+# viewer, you should turn it off when instantiating the SLAM object.
+Viewer.HeadlessMode: 0
+Viewer.SaveFramesToFile: 0
+Viewer.SaveMapDrawingsToFile: 0
